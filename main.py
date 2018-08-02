@@ -4,14 +4,11 @@ import argparse
 import numpy as np
 
 from scio import load_gene_by_cell_matrix
-from distance import select_markers, get_spearman, get_distance, get_jaccard_distance, get_pearson
+from util import binerize
+from distance import select_markers, get_spearman, get_pearson, get_distance
 from cluster import run_phenograph
 from visualize import run_umap, run_dca, plot_clusters
 
-
-"""
-‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
-"""
 
 def _parser():
     parser = argparse.ArgumentParser()
@@ -21,7 +18,7 @@ def _parser():
     parser.add_argument('-n', '--norm', default='none',
             choices=['none', 'cp10k', 'log2cp10k'])
     parser.add_argument('-r', '--dim-redux', default='marker',
-            choices=['none', 'marker', 'pca', 'marker_pca'])
+            choices=['none', 'marker', 'pca'])
     parser.add_argument('-d', '--distance', default='spearman',
             choices=['spearman', 'euclidean', 'pearson', 'cosine', 'jaccard'])
     parser.add_argument('-k', default=20,
@@ -55,9 +52,21 @@ def _parser():
 
 def _parseargs_post(args):
     # set norm to none if values same w/ and w/out norm for distance
-    norm_free_metrics = ['spearman', 'jaccard', 'cosine']
+    norm_free_metrics = ['spearman', 'cosine']
     if args.distance in norm_free_metrics and args.norm != 'none':
         msg = 'Distance metric {} invariant to normalization.'
+        msg += ' Setting norm to `none` (given {}).'
+        print(msg.format(args.metric, args.norm))
+        args.norm = 'none'
+
+    binerized_metrics = ['jaccard', ]
+    if args.distance in binerized_metrics and args.dim_redux == 'pca':
+        msg = '{} requires binerized data, and cannot be applied to {} '
+        msg += 'transformed data.'
+        raise InvalidArgumentException(msg.format(args.distance))
+
+    if args.distance in binerized_metrics and args:
+        msg = 'Distance metric {} will be run on a binerized matrix.'
         msg += ' Setting norm to `none` (given {}).'
         print(msg.format(args.metric, args.norm))
         args.norm = 'none'
@@ -123,10 +132,12 @@ if __name__=='__main__':
         distance = 1 - simillarity
         del simillarity ; gc.collect()
         running_prefix.append('corrPR')
-    elif args.distance == 'jaccard':
-        distance = get_jaccard_distance(redux, outdir=args.outdir,
-                prefix='.'.join(running_prefix), )
-        running_prefix.append('jac')
+    elif args.distance in ['jaccard']:
+        binerized = np.where(redux > 0, np.ones_like(redux),
+                np.zeros_like(redux))
+        distance = get_distance(binerized, outdir=args.outdir,
+                prefix='.'.join(running_prefix) )
+        running_prefix.append(metric)
     else:
         distance = get_distance(redux, metric=args.distance,
                 outdir=args.outdir, prefix='.'.join(running_prefix), )
@@ -159,3 +170,9 @@ if __name__=='__main__':
 
     # differential expression
     # TODO
+    #
+
+
+"""
+‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
+"""
