@@ -13,7 +13,7 @@ def _parser():
     parser.add_argument('-p', '--prefix', default='')
     parser.add_argument('--metric', default='spearman',
             choices=['spearman', 'euclidean', 'pearson'])
-    parser.add_argument('-d', '--dim-redux',
+    parser.add_argument('-d', '--dim-redux', default='marker',
             choices=['none', 'marker', 'pca', 'marker_pca'])
     parser.add_argument('-k', default=20,
             help='Number of nearest neighbors to use for clustering.')
@@ -23,7 +23,7 @@ def _parser():
             help='Use the given marker file rather than determining highly '
             'variable genes from `count-matrix` (for marker based column '
             'selection).')
-    parser.add_argument('--nstd', default=6.0
+    parser.add_argument('--nstd', default=6.0,
             help='Only used when `dim-redux`=`marker` and `marker_file` not '
             'given. Sets adaptive threshold for marker selection at `nstd` '
             'standard devations above the mean dropout score. The threshold '
@@ -45,7 +45,9 @@ def _parser():
 
 
 def _parseargs_post(args):
-   return args
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir)
+    return args
 
 
 if __name__=='__main__':
@@ -54,12 +56,16 @@ if __name__=='__main__':
     args = _parseargs_post(args)
 
     # load the count matrix
+    print('Loading UMI count matrix')
     counts, genes = load_gene_by_cell_matrix(args.count_matrix)
+    nonzero = counts.sum(axis=1) > 0
+    counts = counts.loc[nonzero]
+    genes = genes.loc[nonzero]
 
     running_prefix = [args.prefix]
     # select markers or reduce dimensionality
     if args.dim_redux == 'marker':
-        if os.path.exits(args.marker_file):
+        if len(args.marker_file) > 0 and os.path.exits(args.marker_file):
             markers = pd.read_csv(args.marker_file, delim_whitespace=True,
                 header=None)
             marker_ix = genes.loc[genes.ens.isin(markers[0])].index.values
@@ -75,7 +81,7 @@ if __name__=='__main__':
         redux = counts.iloc[marker_ix]
     elif args.dim_redux in ['none', 'pcs']:
         print('{} not yet implemented'.format(args.dim_redux))
-        return
+        raise(InvalidArgumentException())
 
     # get similarity/distance
     if args.metric == 'spearman':
@@ -85,11 +91,11 @@ if __name__=='__main__':
         running_prefix.append('corrSP')
     else:
         print('{} not yet implemented'.format(args.metric))
-        return
+        raise(InvalidArgumentException())
 
     # visualize
     umap = run_umap(distance, prefix='.'.join(running_prefix),
-            outdir=arg.outdir)
+            outdir=args.outdir)
     dca = run_dca(distance, prefix='.'.join(running_prefix), outdir=args.outdir)
     if args.tsne:
         print('tsne not yet implemented')
@@ -98,10 +104,10 @@ if __name__=='__main__':
     communities, graph, Q = run_phenograph(distance, k=args.k,
             prefix='.'.join(running_prefix), outdir=args.outdir)
     # visualize communities
-    plot_clusters(communities, umap, outdir=outdir,
-            prefix='.'.join(running_prefix + 'umap'))
-    plot_clusters(communities, dca, outdir=outdir,
-            prefix='.'.join(running_prefix + 'dca'),
+    plot_clusters(communities, umap, outdir=args.outdir,
+            prefix='.'.join(running_prefix + ['umap']))
+    plot_clusters(communities, dca, outdir=args.outdir,
+            prefix='.'.join(running_prefix + ['dca']),
             label_name='Diffusion Component')
 
     # differential expression

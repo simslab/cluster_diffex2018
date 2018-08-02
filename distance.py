@@ -32,11 +32,10 @@ def get_correlation(matrix, outdir='', prefix='', verbose=False):
         print('Computing Spearman correlation matrix...')
     sp_matrix = spearmanr(matrix)[0]
     if outdir is not None and len(outdir)>0:
-        filename='{}/{}corrSP.txt'.format(outdir, prefix.rstrip('.') + '.' \
-                if len(label)>0 else label)
+        filename='{}/{}.corrSP.txt'.format(outdir, prefix.rstrip('.'))
         # write Spearman correlation matrix to file
         print('Writing correlation matrix...')
-        np.savetxt(filename, sp_matrix, sep='\t')
+        np.savetxt(filename, sp_matrix, delimiter='\t')
     return sp_matrix
 
 
@@ -65,7 +64,7 @@ def get_distance(matrix, outdir, prefix):
     return d_matrix
 
 
-def select_markers(counts, window=25, n_stdev=6, t=0.15,
+def select_markers(counts, window=25, nstd=6, t=0.15,
         outdir='', prefix='', gene_names=None):
     """
     Parameters
@@ -74,7 +73,7 @@ def select_markers(counts, window=25, n_stdev=6, t=0.15,
         gene x cell count matrix
     window : int, (default 25)
         size of window centered at each gene
-    n_stdev : float, (default 6)
+    nstd : float, (default 6)
         number of standard deviations from the mean to set an adaptive
         dropout threshold.  To force use of a hard threshold, set to
         something really high.
@@ -97,7 +96,7 @@ def select_markers(counts, window=25, n_stdev=6, t=0.15,
     print("Calculating dropout scores...")
     dropout, means, scores = _dropout_scores(counts, window)
 
-    adaptive_threshold = n_stdev*np.std(scores) + np.mean(scores)
+    adaptive_threshold = nstd*np.std(scores) + np.mean(scores)
     threshold = min(adaptive_threshold, t)
     if threshold == adaptive_threshold:
         msg = 'Using adaptive threshold {adaptive_threshold}'
@@ -106,7 +105,7 @@ def select_markers(counts, window=25, n_stdev=6, t=0.15,
         msg = 'Using absolute threshold {t}'
         msg += ' over adaptive threshold {adaptive_threshold}'
     print(msg.format(adaptive_threshold=adaptive_threshold, t=t))
-    ix_passing = np.arange(counts.shape[0])[scores > threshold]
+    ix_passing = np.arange(counts.shape[0])[scores > threshold].astype(int)
 
     n_markers = len(ix_passing)
     print('Found {} markers from dropout analysis'.format(n_markers))
@@ -115,21 +114,21 @@ def select_markers(counts, window=25, n_stdev=6, t=0.15,
     if outdir is not None and len(outdir) > 0:
         # record parameters and adaptive threshold
         print('Writing threshold info...')
-        thresholdfile = '{}/{}.dropout_threshold.txt'
+        thresholdfile = '{}/{}.dropout_threshold.txt'.format(outdir, prefix)
         with open(thresholdfile, 'w') as f:
-            msg = 'nstdev: {}\nadaptive:{}\nt: {}\n'.format(n_stdev,
+            msg = 'nstdev: {}\nadaptive:{}\nt: {}\n'.format(nstd,
                     adaptive_threshold, t)
             f.write(msg)
 
         # save marker indexes
-        ixfile = '{}/{}.marker_ix.txt'.format(outfile, prefix)
-        np.savetxt(ixfile, ix_passing)
+        ixfile = '{}/{}.marker_ix.txt'.format(outdir, prefix)
+        np.savetxt(ixfile, ix_passing.astype(int), fmt='%i')
 
         # save marker gene names if gene_names given
         if gene_names is not None:
-            markerfile = '{}/{}.markers.txt'.format(outfile, prefix)
-            passing_names = gene_names.loc[ix_passing]
-            passing_names.to_csv(markerfile, delim='\t', header=None, index=None)
+            markerfile = '{}/{}.markers.txt'.format(outdir, prefix)
+            passing_names = gene_names.iloc[ix_passing]
+            passing_names.to_csv(markerfile, sep='\t', header=None, index=None)
 
         # plot the dropout curve
         print('Plotting dropout curve')

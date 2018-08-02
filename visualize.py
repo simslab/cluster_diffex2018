@@ -40,7 +40,7 @@ def run_umap(distance, outdir, prefix):
     print('Plot umap output...')
     np.savetxt(outfile_coords, embedding, delimiter='\t')
 
-    with PdfPages(umap_PDF) as pdf:
+    with PdfPages(outfile_pdf) as pdf:
         plt.plot(embedding[:,0],embedding[:,1],'ko',markersize=4)
         plt.xlabel('UMAP Axis 1')
         plt.ylabel('UMAP Axis 2')
@@ -75,7 +75,7 @@ def run_dca(distance, outdir, prefix):
 
     # get diffusion commpontnets
     print('Running DCA...')
-    dmap = dmaps.DiffusionMap(matrix)
+    dmap = dmaps.DiffusionMap(distance)
     dmap.set_kernel_bandwidth(3)
     dmap.compute(3)
     dmap_eig = dmap.get_eigenvectors()
@@ -89,7 +89,7 @@ def run_dca(distance, outdir, prefix):
     print('Plot dca output...')
     np.savetxt(outfile_coords, embedding, delimiter='\t')
 
-    with PdfPages(umap_PDF) as pdf:
+    with PdfPages(outfile_pdf) as pdf:
         plt.plot(embedding[:,0],embedding[:,1],'ko',markersize=4)
         plt.xlabel('Diffusion Component 1')
         plt.ylabel('Diffusion Component 2')
@@ -110,7 +110,7 @@ def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):
     colors = ['red','green','blue','magenta','brown','cyan','black','orange',
               'grey','darkgreen','yellow','tan','seagreen','fuchsia','gold',
               'olive']
-    N = len(set(communities))
+    N = len(set(clusters))
     if N > len(colors):
         colors = [name for name,hex in mpl.colors.cnames.items()]
         colors.reverse()
@@ -118,7 +118,7 @@ def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):
     with PdfPages(outfile) as pdf:
         fig,ax = plt.subplots()
         for c in range(N):
-            my_coords = coordiates[clusters==c, :]
+            my_coords = coordinates[clusters==c, :]
             ax.scatter(my_coords[:,0], my_coords[:,1], color=colors[c], s=10,
                     lw=0, edgecolor='none', label=str(c))
         plt.xlabel('{} 1'.format(label_name))
