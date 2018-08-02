@@ -114,7 +114,7 @@ if __name__=='__main__':
                 prefix='.'.join(running_prefix), )
         running_prefix.append('jac')
     else:
-        distance = get_distance(redux, metric=args.distance
+        distance = get_distance(redux, metric=args.distance,
                 outdir=args.outdir, prefix='.'.join(running_prefix), )
         running_prefix.append(args.distance[:3])
 
