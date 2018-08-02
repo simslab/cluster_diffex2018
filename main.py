@@ -133,7 +133,13 @@ if __name__=='__main__':
     # visualize
     umap = run_umap(distance, prefix='.'.join(running_prefix),
             outdir=args.outdir)
-    dca = run_dca(distance, prefix='.'.join(running_prefix), outdir=args.outdir)
+    try:
+        dca = run_dca(distance, prefix='.'.join(running_prefix),
+                outdir=args.outdir)
+    except RuntimeError as e:
+        print('DCA error: {}'.format(e))
+        dca = None
+
     if args.tsne:
         print('tsne not yet implemented')
 
@@ -143,9 +149,10 @@ if __name__=='__main__':
     # visualize communities
     plot_clusters(communities, umap, outdir=args.outdir,
             prefix='.'.join(running_prefix + ['umap']))
-    plot_clusters(communities, dca, outdir=args.outdir,
-            prefix='.'.join(running_prefix + ['dca']),
-            label_name='Diffusion Component')
+    if dca is not None:
+        plot_clusters(communities, dca, outdir=args.outdir,
+                prefix='.'.join(running_prefix + ['dca']),
+                label_name='Diffusion Component')
 
     # differential expression
     # TODO
