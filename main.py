@@ -52,6 +52,14 @@ def _parser():
 
 
 def _parseargs_post(args):
+    # set norm to none if values same w/ and w/out norm for distance
+    norm_free_metrics = ['spearman', 'jaccard', 'cosine']
+    if args.distance in norm_free_metrics and args.norm != 'none':
+        msg = 'Distance metric {} invariant to normalization.'
+        msg += ' Setting norm to `none` (given {}).'
+        print(msg.format(args.metric, args.norm))
+        args.norm = 'none'
+
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir)
     return args
