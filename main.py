@@ -1,4 +1,5 @@
 import os
+import gc
 import argparse
 
 from scio import load_gene_by_cell_matrix
@@ -113,11 +114,13 @@ if __name__=='__main__':
         simillarity = get_spearman(redux, outdir=args.outdir,
                 prefix='.'.join(running_prefix), verbose=True)
         distance = 1 - simillarity
+        del simillarity ; gc.collect()
         running_prefix.append('corrSP')
     elif args.distance == 'pearson':
-        distance = get_distance(redux, metric='correlation',
-                alt_metric_label='corrPR',
-                outdir=args.outdir, prefix='.'.join(running_prefix), )
+        simillarity = get_pearson(redux, outdir=args.outdir,
+                prefix='.'.join(running_prefix), )
+        distance = 1 - simillarity
+        del simillarity ; gc.collect()
         running_prefix.append('corrPR')
     elif args.distance == 'jaccard':
         distance = get_jaccard_distance(redux, outdir=args.outdir,

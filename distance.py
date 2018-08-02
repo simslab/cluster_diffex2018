@@ -39,6 +39,33 @@ def get_spearman(matrix, outdir='', prefix='', verbose=False):
     return sp_matrix
 
 
+def get_pearson(matrix, outdir='', prefix='', verbose=False):
+    """ Computes the Pearson's correlation from an expression matrix
+
+    Parameters
+    ----------
+    matrix : ndarray
+        matrix of elements compare similarity on.  Might be a counts matrix, a
+        counts matrix of selected genes, PC components, etc.
+    outdir: str, default ''
+    prefix: str, default ''
+    verbose: bool (default False)
+
+    Returns
+    -------
+    sp_matrix : matrix of cell-cell Spearman's correlation coefficients
+
+    """
+    if verbose:
+        print('Computing Pearson correlation matrix...')
+    pr_matrix = np.corrcoef(matrix)
+    if outdir is not None and len(outdir)>0:
+        filename='{}/{}.corrPR.txt'.format(outdir, prefix.rstrip('.'))
+        # write  correlation matrix to file
+        print('Writing correlation matrix...')
+        np.savetxt(filename, pr_matrix, delimiter='\t')
+    return pr_matrix
+
 def get_jaccard_distance(matrix, outdir, prefix, thrshold=0):
     """Compute pairwise jaccard on binerized matrix
 
