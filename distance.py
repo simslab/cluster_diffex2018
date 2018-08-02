@@ -39,7 +39,7 @@ def get_spearman(matrix, outdir='', prefix='', verbose=False):
     return sp_matrix
 
 
-def get_jaccard_distance(matrix, outdir, prefix, thrshold=0):
+def get_jaccard_distance(matrix, outdir, prefix, threshold=0):
     """Compute pairwise jaccard on binerized matrix
 
     Parameters
@@ -50,13 +50,15 @@ def get_jaccard_distance(matrix, outdir, prefix, thrshold=0):
         output directory
     prefix :str
         name of sequencing data set (e.g. PJ015)
+    threshold : float, default 0
+        binerization threshold
 
     Results
     -------
     d_matrix : cell by cell distance matrix
     """
-    bin_matrix = np.where(matrix > threshold, np.oneslike(matrix),
-            np.zeroslike(matrix))
+    bin_matrix = np.where(matrix > threshold, np.ones_like(matrix),
+            np.zeros_like(matrix))
     return get_distance(bin_matrix, outdir, prefix, metric='jaccard')
 
 
