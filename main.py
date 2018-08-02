@@ -1,5 +1,6 @@
 import os
 import argparse
+import numpy as np
 
 from scio import load_gene_by_cell_matrix
 from distance import select_markers, get_spearman, get_distance, get_jaccard_distance
