@@ -77,8 +77,8 @@ def get_distance(matrix, outdir, prefix, metric='euclidean',
     metric : str, default 'euclidean'
         valid metric input to scipy.spatial.distance.pdist
     alt_metric_label : str, default ''
-        name to use in filenames for metric instead of first 3 letters of
-        metric. only used if len(`alt_metric_label`) > 0
+        name to use in filenames for metric instead metric name.
+        only used if len(`alt_metric_label`) > 0
 
     Results
     -------
@@ -88,7 +88,7 @@ def get_distance(matrix, outdir, prefix, metric='euclidean',
     d_matrix = squareform(pdist(matrix.T, metric=metric))
     # write Spearman correlation matrix to file
     print('Writing distance matrix...')
-    metric_label = alt_metric_label if len(alt_metric_label) > 0 else metric[:3]
+    metric_label = alt_metric_label if len(alt_metric_label) > 0 else metric
     outfile = '{0}/{1}.{2}.txt'.format(outdir, prefix, metric_label)
     np.savetxt(outfile, d_matrix, delimiter='\t')
     return d_matrix
