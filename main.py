@@ -17,7 +17,7 @@ def _parser():
     parser.add_argument('-o', '--outdir', required=True)
     parser.add_argument('-p', '--prefix', default='')
     parser.add_argument('-n', '--norm', default='none',
-            choices=['none', 'cp10k'])
+            choices=['none', 'cp10k', 'log2cp10k'])
     parser.add_argument('-r', '--dim-redux', default='marker',
             choices=['none', 'marker', 'pca', 'marker_pca'])
     parser.add_argument('-d', '--distance', default='spearman',
@@ -72,9 +72,11 @@ if __name__=='__main__':
     running_prefix = [args.prefix]
 
     # normalize if needed
-    if args.norm == 'cp10k':
+    if args.norm in ['cp10k', 'log2cp10k']:
         norm = counts / counts.sum(axis=0) * 10000
         running_prefix.append(args.norm)
+        if args.norm == 'log2cp10k':
+            norm = np.log2(norm + 1)
     else:
         norm = counts
 
