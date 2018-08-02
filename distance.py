@@ -11,7 +11,7 @@ Functions for marker gene selection and computing cell-cell distances or
 similarities
 """
 
-def get_correlation(matrix, outdir='', prefix='', verbose=False):
+def get_spearman(matrix, outdir='', prefix='', verbose=False):
     """ Computes the Spearman's correlation from an expression matrix
 
     Parameters
@@ -39,8 +39,30 @@ def get_correlation(matrix, outdir='', prefix='', verbose=False):
     return sp_matrix
 
 
-def get_distance(matrix, outdir, prefix):
-    """ get and write pairwise euclidean distance
+def get_jaccard_distance(matrix, outdir, prefix, thrshold=0):
+    """Compute pairwise jaccard on binerized matrix
+
+    Parameters
+    ----------
+    matrix : ndarray
+        matrix of molecular counts or PC loadings, etc to binerize
+    outdir: str
+        output directory
+    prefix :str
+        name of sequencing data set (e.g. PJ015)
+
+    Results
+    -------
+    d_matrix : cell by cell distance matrix
+    """
+    bin_matrix = np.where(matrix > threshold, np.oneslike(matrix),
+            np.zeroslike(matrix))
+    return get_distance(bin_matrix, outdir, prefix, metric='jaccard')
+
+
+def get_distance(matrix, outdir, prefix, metric='euclidean',
+        alt_metric_label=''):
+    """ get and write pairwise distance
 
     Parameters
     ----------
@@ -50,16 +72,22 @@ def get_distance(matrix, outdir, prefix):
         output directory
     prefix :str
         name of sequencing data set (e.g. PJ015)
+    metric : str, default 'euclidean'
+        valid metric input to scipy.spatial.distance.pdist
+    alt_metric_label : str, default ''
+        name to use in filenames for metric instead of first 3 letters of
+        metric. only used if len(`alt_metric_label`) > 0
 
     Results
     -------
-    d_matrix : cell by cell distnace matrix
+    d_matrix : cell by cell distance matrix
     """
     print('Computing distance matrix...')
-    d_matrix = squareform(pdist(matrix.T))
+    d_matrix = squareform(pdist(matrix.T, metric=metric))
     # write Spearman correlation matrix to file
     print('Writing distance matrix...')
-    outfile = '{0}/{1}.euc.txt'.format(working, outdir, prefix)
+    metric_label = alt_metric_label if len(alt_metric_label) > 0 else metric[:3]
+    outfile = '{0}/{1}.{2}.txt'.format(outdir, prefix, metric_label)
     np.savetxt(outfile, d_matrix, delimiter='\t')
     return d_matrix
 

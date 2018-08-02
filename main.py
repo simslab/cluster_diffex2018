@@ -2,19 +2,26 @@ import os
 import argparse
 
 from scio import load_gene_by_cell_matrix
-from distance import select_markers, get_correlation, get_distance
+from distance import select_markers, get_spearman, get_distance
 from cluster import run_phenograph
 from visualize import run_umap, run_dca, plot_clusters
+
+
+"""
+‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
+"""
 
 def _parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--count-matrix', required=True)
     parser.add_argument('-o', '--outdir', required=True)
     parser.add_argument('-p', '--prefix', default='')
-    parser.add_argument('--metric', default='spearman',
-            choices=['spearman', 'euclidean', 'pearson'])
-    parser.add_argument('-d', '--dim-redux', default='marker',
+    parser.add_argument('-n', '--norm', default='none',
+            choices=['none', 'cp10k'])
+    parser.add_argument('-r', '--dim-redux', default='marker',
             choices=['none', 'marker', 'pca', 'marker_pca'])
+    parser.add_argument('-d', '--distance', default='spearman',
+            choices=['spearman', 'euclidean', 'pearson', 'cosine', 'jaccard'])
     parser.add_argument('-k', default=20,
             help='Number of nearest neighbors to use for clustering.')
 
@@ -63,6 +70,14 @@ if __name__=='__main__':
     genes = genes.loc[nonzero]
 
     running_prefix = [args.prefix]
+
+    # normalize if needed
+    if args.norm == 'cp10k':
+        norm = counts / counts.sum(axis=0) * 10000
+        running_prefix.append(args.norm)
+    else:
+        norm = counts
+
     # select markers or reduce dimensionality
     if args.dim_redux == 'marker':
         if len(args.marker_file) > 0 and os.path.exits(args.marker_file):
@@ -78,20 +93,31 @@ if __name__=='__main__':
                 window=args.window_size, nstd=args.nstd,
                 t=args.absolute_threshold)
         running_prefix.append('markers')
-        redux = counts.iloc[marker_ix]
-    elif args.dim_redux in ['none', 'pcs']:
+        redux = norm.iloc[marker_ix]
+    elif args.dim_redux in ['none', 'pca']:
         print('{} not yet implemented'.format(args.dim_redux))
         raise(InvalidArgumentException())
 
     # get similarity/distance
-    if args.metric == 'spearman':
-        simillarity = get_correlation(redux, outdir=args.outdir,
+    if args.distance == 'spearman':
+        simillarity = get_spearman(redux, outdir=args.outdir,
                 prefix='.'.join(running_prefix), verbose=True)
         distance = 1 - simillarity
         running_prefix.append('corrSP')
+    elif args.distance == 'pearson':
+        distance = get_distance(redux, metric='correlation',
+                alt_metric_label='corrPR',
+                outdir=args.outdir, prefix='.'.join(running_prefix), )
+        running_prefix.append('corrPR')
+    elif args.distance == 'jaccard':
+        distance = get_jaccard_distance(redux, outdir=args.outdir,
+                prefix='.'.join(running_prefix), )
+        running_prefix.append('jac')
     else:
-        print('{} not yet implemented'.format(args.metric))
-        raise(InvalidArgumentException())
+        distance = get_distance(redux, metric=args.distance
+                outdir=args.outdir, prefix='.'.join(running_prefix), )
+        running_prefix.append(args.distance[:3])
+
 
     # visualize
     umap = run_umap(distance, prefix='.'.join(running_prefix),
