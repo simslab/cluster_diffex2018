@@ -58,7 +58,7 @@ def get_pearson(matrix, outdir='', prefix='', verbose=False):
     """
     if verbose:
         print('Computing Pearson correlation matrix...')
-    pr_matrix = np.corrcoef(matrix)
+    pr_matrix = np.corrcoef(matrix.T)
     if outdir is not None and len(outdir)>0:
         filename='{}/{}.corrPR.txt'.format(outdir, prefix.rstrip('.'))
         # write  correlation matrix to file
