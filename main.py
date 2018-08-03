@@ -4,7 +4,6 @@ import argparse
 import numpy as np
 
 from scio import load_gene_by_cell_matrix
-from util import binerize
 from distance import select_markers, get_spearman, get_pearson, get_distance
 from cluster import run_phenograph
 from visualize import run_umap, run_dca, plot_clusters
@@ -56,7 +55,7 @@ def _parseargs_post(args):
     if args.distance in norm_free_metrics and args.norm != 'none':
         msg = 'Distance metric {} invariant to normalization.'
         msg += ' Setting norm to `none` (given {}).'
-        print(msg.format(args.metric, args.norm))
+        print(msg.format(args.distance, args.norm))
         args.norm = 'none'
 
     binerized_metrics = ['jaccard', ]
