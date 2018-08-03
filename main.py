@@ -68,7 +68,7 @@ def _parseargs_post(args):
     if args.distance in binerized_metrics and args.norm != 'none':
         msg = 'Distance metric {} will be run on a binerized matrix.'
         msg += ' Setting norm to `none` (given {}).'
-        print(msg.format(args.metric, args.norm))
+        print(msg.format(args.distance, args.norm))
         args.norm = 'none'
 
     if not os.path.exists(args.outdir):
