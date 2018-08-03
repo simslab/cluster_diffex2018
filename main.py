@@ -19,7 +19,8 @@ def _parser():
     parser.add_argument('-r', '--dim-redux', default='marker',
             choices=['none', 'marker', 'pca'])
     parser.add_argument('-d', '--distance', default='spearman',
-            choices=['spearman', 'euclidean', 'pearson', 'cosine', 'jaccard'])
+            choices=['spearman', 'euclidean', 'pearson', 'cosine',
+                'jaccard', 'hamming'])
     parser.add_argument('-k', default=20,
             help='Number of nearest neighbors to use for clustering.')
 
@@ -58,13 +59,13 @@ def _parseargs_post(args):
         print(msg.format(args.distance, args.norm))
         args.norm = 'none'
 
-    binerized_metrics = ['jaccard', ]
+    binerized_metrics = ['jaccard', 'hamming']
     if args.distance in binerized_metrics and args.dim_redux == 'pca':
         msg = '{} requires binerized data, and cannot be applied to {} '
         msg += 'transformed data.'
         raise InvalidArgumentException(msg.format(args.distance))
 
-    if args.distance in binerized_metrics and args:
+    if args.distance in binerized_metrics and args.norm != 'none':
         msg = 'Distance metric {} will be run on a binerized matrix.'
         msg += ' Setting norm to `none` (given {}).'
         print(msg.format(args.metric, args.norm))
@@ -131,7 +132,7 @@ if __name__=='__main__':
         distance = 1 - simillarity
         del simillarity ; gc.collect()
         running_prefix.append('corrPR')
-    elif args.distance in ['jaccard']:
+    elif args.distance in ['jaccard', 'hamming']:
         binerized = np.where(redux > 0, np.ones_like(redux),
                 np.zeros_like(redux))
         distance = get_distance(binerized, outdir=args.outdir,
