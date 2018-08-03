@@ -137,11 +137,11 @@ if __name__=='__main__':
                 np.zeros_like(redux))
         distance = get_distance(binerized, outdir=args.outdir,
                 prefix='.'.join(running_prefix) )
-        running_prefix.append(metric)
+        running_prefix.append(args.distance)
     else:
         distance = get_distance(redux, metric=args.distance,
                 outdir=args.outdir, prefix='.'.join(running_prefix), )
-        running_prefix.append(args.distance[:3])
+        running_prefix.append(args.distance)
 
 
     # visualize
