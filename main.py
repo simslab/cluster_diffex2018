@@ -3,6 +3,8 @@ import gc
 import argparse
 import numpy as np
 
+from scipy.stats import energy_distance, wasserstein_distance
+
 from scio import load_gene_by_cell_matrix
 from distance import select_markers, get_spearman, get_pearson, get_distance
 from cluster import run_phenograph
@@ -20,7 +22,7 @@ def _parser():
             choices=['none', 'marker', 'pca'])
     parser.add_argument('-d', '--distance', default='spearman',
             choices=['spearman', 'euclidean', 'pearson', 'cosine',
-                'jaccard', 'hamming'])
+                'jaccard', 'hamming', 'energy', 'earthmover'])
     parser.add_argument('-k', default=20,
             help='Number of nearest neighbors to use for clustering.')
 
@@ -133,16 +135,24 @@ if __name__=='__main__':
         del simillarity ; gc.collect()
         running_prefix.append('corrPR')
     elif args.distance in ['jaccard', 'hamming']:
+        # binerize matrices first
         binerized = np.where(redux > 0, np.ones_like(redux),
                 np.zeros_like(redux))
         distance = get_distance(binerized, outdir=args.outdir,
-                prefix='.'.join(running_prefix) )
+                prefix='.'.join(running_prefix), metric=args.distance )
         running_prefix.append(args.distance)
+    elif args.distance == 'energy':
+        distance = get_distance(binerized, outdir=args.outdir,
+                prefix='.'.join(running_prefix), metric=energy_distance)
+        running_prefix.append(args.distance)
+    elif args.distance in ['earthmover', 'wasserstein']:
+        distance = get_distance(binerized, outdir=args.outdir,
+                prefix='.'.join(running_prefix), metric=wasserstein_distance)
+        running_prefix.append('earthmover')
     else:
         distance = get_distance(redux, metric=args.distance,
                 outdir=args.outdir, prefix='.'.join(running_prefix), )
         running_prefix.append(args.distance)
-
 
     # visualize
     umap = run_umap(distance, prefix='.'.join(running_prefix),
