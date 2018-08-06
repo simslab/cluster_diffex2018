@@ -1,38 +1,20 @@
 #!/usr/bin/python
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import coo_matrix
 
 import phenograph
 
 def get_knn(distance, k=20):
-    """
-    Parameters
-    ----------
-    distance : np.array
-        cell x cell distances
-    k : int, optional
-        number of nearest neighbors [30]
-
-    Returns
-    -------
-    knn_coo : coo_matrix
-        cell x cell coo matrix where each row contains `k` nonzero entries
-        corresponding to the cell's k nearest neighbors.  Entries are set to
-        with the distance between the two corresponding cells
-    """
     topk = np.argsort(distance)[:, 1:k+1]
-
-    #make into csr matrix
-    indptr = [0]
-    indices = []
-    data = []
+    values, row, col, kstart = [], [], [], -(k+1)
     for cell in np.arange(topk.shape[0]):
-        indices.extend(topk[cell, :])
-        data.extend(distance[cell, topk[cell, :]])
-        indptr.append(len(indices))
-    csr = csr_matrix((data,indices, indptr))
-    return csr.tocoo()
+        knn_c = topk[cell,:]
+        row.append(cell*np.ones((k,)))
+        col.append(knn_c)
+        values.append(distance[cell, knn_c])
+    indices = (np.hstack(row), np.hstack(col))
+    return coo_matrix((np.hstack(values), indices),shape=distance.shape)
 
 
 def run_phenograph(distance, k=20, outdir='', prefix=''):

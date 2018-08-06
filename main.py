@@ -37,12 +37,12 @@ def _parser():
             help='Use the given marker file rather than determining highly '
             'variable genes from `count-matrix` (for marker based column '
             'selection).')
-    parser.add_argument('--nstd', default=6.0,
+    parser.add_argument('--nstd', default=6.0, type=float,
             help='Only used when `dim-redux`=`marker` and `marker_file` not '
             'given. Sets adaptive threshold for marker selection at `nstd` '
             'standard devations above the mean dropout score. The threshold '
             'used is min(adaptive_threshold, absolute_theshold).')
-    parser.add_argument('--absolute-threshold', default=0.15,
+    parser.add_argument('--absolute-threshold', default=0.15, type=float,
             help='Only used when `dim-redux`=`marker` and `marker_file` not '
             'given. Sets absolute threshold for marker selection. The threshold '
             'used is min(adaptive_threshold, absolute_theshold).')
