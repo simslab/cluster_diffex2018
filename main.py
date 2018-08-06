@@ -9,6 +9,7 @@ from scio import load_gene_by_cell_matrix
 from distance import select_markers, get_spearman, get_pearson, get_distance
 from cluster import run_phenograph
 from visualize import run_umap, run_dca, plot_clusters
+from diffex import binomial_test_cluster_vs_rest, write_diffex_by_cluster
 
 
 def _parser():
@@ -179,9 +180,10 @@ if __name__=='__main__':
                 label_name='Diffusion Component')
 
     # differential expression
-    # TODO
-    #
-
+    up, down, cluster_info = binomial_test_cluster_vs_rest(counts, communities,
+            '.'.join(running_prefix), for_gsea=True, verbose=True)
+    write_diffex_by_cluster(up, down, args.outdir, '.'.join(running_prefix),
+            cluster_info)
 
 """
 ‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
