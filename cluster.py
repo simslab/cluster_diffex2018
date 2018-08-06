@@ -16,8 +16,8 @@ def get_knn(distance, k=20):
 
     Returns
     -------
-    knn_csr : csr_matrix
-        cell x cell csr matrix where each row contains `k` nonzero entries
+    knn_coo : coo_matrix
+        cell x cell coo matrix where each row contains `k` nonzero entries
         corresponding to the cell's k nearest neighbors.  Entries are set to
         with the distance between the two corresponding cells
     """
@@ -32,7 +32,7 @@ def get_knn(distance, k=20):
         data.extend(distance[cell, topk[cell, :]])
         indptr.append(len(indices))
     csr = csr_matrix((data,indices, indptr))
-    return csr
+    return csr.tocoo()
 
 
 def run_phenograph(distance, k=20, outdir='', prefix=''):

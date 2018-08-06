@@ -3,7 +3,12 @@ import gc
 import argparse
 import numpy as np
 
-from scipy.stats import energy_distance, wasserstein_distance
+try:
+    from scipy.stats import energy_distance, wasserstein_distance
+except ImportError:
+    msg = 'Warning: could not import energy_distance or wasserstein_distance. '
+    msg+= 'To use energy or earthmover distance, upgrade scipy.'
+    print(msg)
 
 from scio import load_gene_by_cell_matrix
 from distance import select_markers, get_spearman, get_pearson, get_distance
@@ -143,11 +148,11 @@ if __name__=='__main__':
                 prefix='.'.join(running_prefix), metric=args.distance )
         running_prefix.append(args.distance)
     elif args.distance == 'energy':
-        distance = get_distance(binerized, outdir=args.outdir,
+        distance = get_distance(redux, outdir=args.outdir,
                 prefix='.'.join(running_prefix), metric=energy_distance)
         running_prefix.append(args.distance)
     elif args.distance in ['earthmover', 'wasserstein']:
-        distance = get_distance(binerized, outdir=args.outdir,
+        distance = get_distance(redux, outdir=args.outdir,
                 prefix='.'.join(running_prefix), metric=wasserstein_distance)
         running_prefix.append('earthmover')
     else:
@@ -180,10 +185,9 @@ if __name__=='__main__':
                 label_name='Diffusion Component')
 
     # differential expression
-    up, down, cluster_info = binomial_test_cluster_vs_rest(counts, communities,
-            '.'.join(running_prefix), for_gsea=True, verbose=True)
-    write_diffex_by_cluster(up, down, args.outdir, '.'.join(running_prefix),
-            cluster_info)
+    up, down, cluster_info = binomial_test_cluster_vs_rest(counts, genes,
+            communities, '.'.join(running_prefix), for_gsea=True, verbose=True)
+    write_diffex_by_cluster(up, down, args.outdir, cluster_info)
 
 """
 ‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.

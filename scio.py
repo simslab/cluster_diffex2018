@@ -12,7 +12,7 @@ def load_gene_by_cell_matrix(matrix_file):
     """
     df = pd.read_csv(matrix_file, delim_whitespace=True, header=None)
     genes = df[[0,1]].copy()
-    genes.columns = ['ensg', 'gene']
+    genes.columns = ['ens', 'gene']
     del df[0], df[1]
     df.columns = np.arange(df.columns.size)
 

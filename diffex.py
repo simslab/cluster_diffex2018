@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
-import time
+import os
 import numpy as np
 import pandas as pd
+from scipy.stats import binom
+from statsmodels.sandbox.stats.multicomp import multipletests
 
 from util import cluster_mask_generator
 
@@ -75,7 +77,6 @@ class PopulationStats:
         self.n_cells_exp = self.n_cells_exp.ix[index]
         self.n_mol = self.n_mol.ix[index]
         if self.med_mol is not None:
-            print(self.med_mol.shape)
             self.med_mol = self.med_mol.loc[index]
 
 
@@ -243,9 +244,9 @@ def binomial_test(ingroup, outgroup, min_effectsize=2, FDR=0.01,
     return df_up_final, df_down_final
 
 
-def binomial_test_cluster_vs_rest(expression, clusters, population_id,
-        min_effectsize=2, FDR=0.01, min_proportion=0.2, aux=[],
-        for_gsea=False, garbage_collect=False, verbose=False):
+def binomial_test_cluster_vs_rest(expression, genes, clusters,
+        population_id, min_effectsize=2, FDR=0.01, min_proportion=0.2,
+        aux=[], for_gsea=False, garbage_collect=False, verbose=False):
     """ Run binomial test on all samples in a cluster against all other
         samples in the cluster + stats for an optional aux variable.
 
@@ -305,7 +306,6 @@ def binomial_test_cluster_vs_rest(expression, clusters, population_id,
         rest = PopulationStats.create_from_expression(rest_id, rest_exp)
 
         if verbose:
-            tick = time.time()
             message = 'Calculating diffex for %s vs. %s' % (cluster.id, rest.id)
             print(message)
         # merge aux, make sure it's a copy with [:] operator
@@ -314,23 +314,18 @@ def binomial_test_cluster_vs_rest(expression, clusters, population_id,
         rest.sort(cluster.n_cells_exp.index)
 
         cluster_info.append( [cluster.id, cluster.n_cells, rest.n_cells] )
-        up_c, down_c = StatTests.binomial_test(ingroup=cluster,
-                outgroup=rest, min_effectsize=min_effectsize, FDR=FDR,
+        up_c, down_c = binomial_test(ingroup=cluster, outgroup=rest,
+                min_effectsize=min_effectsize, FDR=FDR,
                 min_proportion=min_proportion)
         up_c['cluster'] = cluster.id
-        up_c['gene'] = sample.genes.ix[up_c.index].gene
+        up_c['gene'] = genes.ix[up_c.index].gene
+        up_c['ens'] = genes.ix[up_c.index].ens
         up.append(up_c)
 
         down_c['cluster'] = cluster.id
-        down_c['gene'] = sample.genes.ix[down_c.index].gene
+        down_c['gene'] = genes.ix[down_c.index].gene
+        down_c['ens'] = genes.ix[down_c.index].ens
         down.append(down_c)
-
-        if verbose:
-            diff = int(time.time() - tick)
-            m, s = diff // 60, diff % 60
-            message = '...completed diffex for %s vs. %s in %d:%d' % (
-                    cluster.id, rest.id, m, s)
-            print(message)
 
         if garbage_collect:
             gc.collect()
@@ -359,18 +354,17 @@ def write_diffex(up, down, outdir, label):
         down.to_csv(down_path, header=True, index=False, sep='\t')
 
 
-def write_diffex_by_cluster(up, down, outdir, label, cluster_info):
+def write_diffex_by_cluster(up, down, outdir, cluster_info):
     clusters = np.union1d(up.cluster.unique(), down.cluster.unique())
     for cluster in clusters:
         up_c = up.loc[up.cluster == cluster]
         down_c = down.loc[down.cluster == cluster]
         nCells = cluster_info.loc[cluster_info.cluster==cluster,
-                'nCells_cluster'].values[0]
+                'n_cells_cluster'].values[0]
         nRest = cluster_info.loc[cluster_info.cluster==cluster,
-                'nCells_rest'].values[0]
-        label_c = '{}.nCells_{}.nRest_{}.{}'.format(cluster,
-                nCells, nRest, label)
-        DiffEx.write_diffex(up_c, down_c, outdir, label_c)
+                'n_cells_rest'].values[0]
+        label_c = '{}.nCells_{}.nRest_{}'.format(cluster, nCells, nRest)
+        write_diffex(up_c, down_c, outdir, label_c)
 
 
 # def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
