@@ -1,5 +1,6 @@
 #! /usr/bin/python
 
+import warnings
 import numpy as np
 import umap
 import dmaps
@@ -30,8 +31,10 @@ def run_umap(distance, outdir, prefix):
 
     # umap
     print('Running umap...')
-    umap_model = umap.UMAP(metric='precomputed', )
-    embedding = umap_model.fit_transform(distance)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        umap_model = umap.UMAP(metric='precomputed', )
+        embedding = umap_model.fit_transform(distance)
 
     outfile_coords = '{}/{}.umap.txt'.format(outdir, prefix)
     outfile_pdf = '{}/{}.umap.pdf'.format(outdir, prefix)

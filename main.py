@@ -2,6 +2,7 @@ import os
 import gc
 import argparse
 import numpy as np
+import pandas as pd
 
 try:
     from scipy.stats import energy_distance, wasserstein_distance
@@ -29,11 +30,11 @@ def _parser():
     parser.add_argument('-d', '--distance', default='spearman',
             choices=['spearman', 'euclidean', 'pearson', 'cosine',
                 'jaccard', 'hamming', 'energy', 'earthmover'])
-    parser.add_argument('-k', default=20,
+    parser.add_argument('-k', default=20, type=int,
             help='Number of nearest neighbors to use for clustering.')
 
     # marker selection/loading parameters
-    parser.add_argument('-mf', '--marker-file', default='',
+    parser.add_argument('-mf', '--marker-file', default='', type=str,
             help='Use the given marker file rather than determining highly '
             'variable genes from `count-matrix` (for marker based column '
             'selection).')
@@ -109,15 +110,26 @@ if __name__=='__main__':
 
     # select markers or reduce dimensionality
     if args.dim_redux == 'marker':
-        if len(args.marker_file) > 0 and os.path.exits(args.marker_file):
-            markers = pd.read_csv(args.marker_file, delim_whitespace=True,
-                header=None)
-            marker_ix = genes.loc[genes.ens.isin(markers[0])].index.values
+        if len(args.marker_file):
+            # load markers from file
+            loaded_markers = pd.read_csv(args.marker_file, header=None,
+                    delim_whitespace=True,)
+            # select markers that are present in the count matrix
+            markers = genes.loc[genes.ens.isin(loaded_markers[0])]
+            # get indices of markers in count matrix
+            marker_ix = np.where(genes.ens.isin(markers.ens).values)[0]
+            # check that we didn't mess up
+            check_names_sorted = genes.iloc[marker_ix].ens.sort_values()
+            loaded_names_sorted = markers.ens.sort_values()
+            assert(all(check_names_sorted.values==loaded_names_sorted.values))
+
             msg = 'Found {} marker gene names in {}. {} matching genes found '
             msg += 'in count matrix.'
-            print(msg.format(len(markers), args.marker_file, len(marker_ix)))
+            print(msg.format(len(markers.ens.unique()), args.marker_file,
+                             len(marker_ix)))
         else:
-            marker_ix = select_markers(counts, outdir=args.outdir,
+            # pick our own markers using the dropout curve
+            marker_ix = select_markers(counts.values, outdir=args.outdir,
                 prefix=args.prefix, gene_names=genes,
                 window=args.window_size, nstd=args.nstd,
                 t=args.absolute_threshold)

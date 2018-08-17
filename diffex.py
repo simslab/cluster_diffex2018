@@ -311,7 +311,7 @@ def binomial_test_cluster_vs_rest(expression, genes, clusters,
         # merge aux, make sure it's a copy with [:] operator
         if len(aux):
             rest.merge(aux[:], inplace=True)
-        rest.sort(cluster.n_cells_exp.index)
+        # rest.sort(cluster.n_cells_exp.index)
 
         cluster_info.append( [cluster.id, cluster.n_cells, rest.n_cells] )
         up_c, down_c = binomial_test(ingroup=cluster, outgroup=rest,

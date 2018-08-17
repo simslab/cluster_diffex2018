@@ -140,7 +140,7 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
         msg = 'Using absolute threshold {t}'
         msg += ' over adaptive threshold {adaptive_threshold}'
     print(msg.format(adaptive_threshold=adaptive_threshold, t=t))
-    ix_passing = np.arange(counts.shape[0])[scores > threshold].astype(int)
+    ix_passing = np.where(scores > threshold)[0]
 
     n_markers = len(ix_passing)
     print('Found {} markers from dropout analysis'.format(n_markers))
@@ -156,11 +156,13 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
             f.write(msg)
 
         # save marker indexes
+        print('Saving marker gene indexes...')
         ixfile = '{}/{}.marker_ix.txt'.format(outdir, prefix)
-        np.savetxt(ixfile, ix_passing.astype(int), fmt='%i')
+        np.savetxt(ixfile, ix_passing, fmt='%i')
 
         # save marker gene names if gene_names given
         if gene_names is not None:
+            print('Saving marker gene names...')
             markerfile = '{}/{}.markers.txt'.format(outdir, prefix)
             passing_names = gene_names.iloc[ix_passing]
             passing_names.to_csv(markerfile, sep='\t', header=None, index=None)
