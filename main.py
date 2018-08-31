@@ -200,6 +200,8 @@ if __name__=='__main__':
     up, down, cluster_info = binomial_test_cluster_vs_rest(counts, genes,
             communities, '.'.join(running_prefix), for_gsea=True, verbose=True)
     write_diffex_by_cluster(up, down, args.outdir, cluster_info)
+    diffex_heatmap(counts, genes, communities, up, 10, args.outdir,
+            '.'.join(running_prefix))
 
 """
 ‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.

@@ -367,36 +367,74 @@ def write_diffex_by_cluster(up, down, outdir, cluster_info):
         write_diffex(up_c, down_c, outdir, label_c)
 
 
-# def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
-        # fdr_cutoff=0.01, normed=False):
-    # """
-    # Generates gene expression heatmap of the top differentially specific
-    # genes for each cluster.
+def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
+        fdr_cutoff=0.01, normed=False):
+    """
+    Generates gene expression heatmap of the top differentially specific
+    genes for each cluster.
 
-    # """
-    # nclusters = len(np.unique(clusters))
+    """
+    nclusters = len(np.unique(clusters))
 
-    # # get top (significantly) differentially specific genes per cluster
-    # top_genes = []
-    # for c in np.sort(np.unique(clusters)):
-        # if c == -1: # exclude unclustered (phenograph unclusted labeled w/-1)
-            # continue
-        # my_diffex = up[up.cluster == c].sort_values(
-                # by=['fdr', 'log2_effect'], ascending=[True,False])
-        # # filter gene names
-        # gene_name_mask = ~my_diffex.gene.str.contains('-')
-        # # only look at significant genes
-        # fdr_mask = my_diffex.fdr <= fdr_cutoff
-        # my_diffex = my_diffex[gene_name_mask & fdr_mask]
-        # top_genes.append(my_diffex.head(ntop).ens.tolist())
+    # get top (significantly) differentially specific genes per cluster
+    top_genes = []
+    for c in np.sort(np.unique(clusters)):
+        if c == -1: # exclude unclustered (phenograph unclusted labeled w/-1)
+            continue
+        my_diffex = up[up.cluster == c].sort_values(
+                by=['fdr', 'log2_effect'], ascending=[True,False])
+        # filter gene names
+        gene_name_mask = ~my_diffex.gene.str.contains('-')
+        # only look at significant genes
+        fdr_mask = my_diffex.fdr <= fdr_cutoff
+        my_diffex = my_diffex[gene_name_mask & fdr_mask]
+        top_genes.append(my_diffex.head(ntop).ens.tolist())
 
-    # cell_order = np.argsort(clusters)
-    # gene_ix_order = genes.set_index('ens').loc[]
-    # if not normed: # if not already normalized, normalized expression
-        # expression = np.log2(expression / expression.sum(axis=0) * 1e4 + 1)
+    # sort cells with mergesort (a stable sort)
+    cell_order = np.argsort(clusters[clusers>=0], kind='mergesort')
+    gene_ix_order = genes.set_index('ens').loc[top_genes]
+    if not normed: # if not already normalized, normalized expression
+        expression = np.log2(expression / expression.sum(axis=0) * 1e4 + 1)
 
-    # diffex_matrix = expression[cell_order]
+    diffex_matrix = expression[cell_order].loc[gene_ix_order]
 
+    # setup colors
+    colors = ['red','green','blue','magenta','brown','cyan','black','orange',
+              'grey','darkgreen','yellow','tan','seagreen','fuchsia','gold',
+              'olive']
+    if Nclusters > len(colors):
+        colors = [name for name,hex in mpl.colors.cnames.items()]
+        colors.reverse()
+    colors = colors[0:Nclusters]
+
+    # plot heatmap of gene expression for top_N genes ordered by cluster assignment
+    clusterfile = '{}/{}.pg.diffex.pdf'
+    with PdfPages(hm_PDF) as pdf:
+        fig,ax = plt.subplots()
+        L = float(len(gids))/100.*15.
+        fig.set_size_inches(20,L)
+        heatmap = ax.pcolor(diffex_matrix.values,cmap='BuGn')
+        fig = plt.gcf()
+        ax = plt.gca()
+        ax.set_yticks(np.arange(diffex_matrix.shape[0])+0.5,minor=False)
+        ax.invert_yaxis()
+        ax.tick_params(axis='both', which='major', labelsize=9)
+        labels = diffex_matrix.index.tolist()
+        ax.set_yticklabels(labels,minor=False)
+        pdf.savefig()
+        plt.close()
+        # fig,ax=plt.subplots()
+        # fig.set_size_inches(20,1)
+        # cMap = ListedColormap(colors)
+        # clusterids = [0 for pt in range(clusters.count(0))]
+		# for i in range(1,Nclusters):
+			# clusterids.extend([i for pt in range(clusters.count(i))])
+		# heatmap = ax.pcolor([clusterids,clusterids],cmap=cMap)
+		# fig = plt.gcf()
+		# ax = plt.gca()
+		# pdf.savefig()
+		# plt.close()
+	# return 0
 
 
 
