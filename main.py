@@ -15,7 +15,7 @@ from scio import load_gene_by_cell_matrix
 from distance import select_markers, get_spearman, get_pearson, get_distance
 from cluster import run_phenograph
 from visualize import run_umap, run_dca, plot_clusters
-from diffex import binomial_test_cluster_vs_rest, write_diffex_by_cluster
+from diffex import binomial_test_cluster_vs_rest, write_diffex_by_cluster, diffex_heatmap
 
 
 def _parser():
@@ -55,6 +55,9 @@ def _parser():
     # visualization
     parser.add_argument('--tsne', action='store_true', default=False)
     parser.add_argument('--no-tsne', dest='tsne', action='store_false')
+
+    parser.add_argument('--dmap', dest='dmap', action='store_true', default=True)
+    parser.add_argument('--no-dmap', dest='dmap', action='store_false')
 
     return parser
 
@@ -191,7 +194,8 @@ if __name__=='__main__':
     # visualize communities
     plot_clusters(communities, umap, outdir=args.outdir,
             prefix='.'.join(running_prefix + ['umap']))
-    if dca is not None:
+    if args.dmap and dca is not None:
+        print(args.dmap)
         plot_clusters(communities, dca, outdir=args.outdir,
                 prefix='.'.join(running_prefix + ['dca']),
                 label_name='Diffusion Component')

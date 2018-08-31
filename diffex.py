@@ -381,18 +381,19 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
     for c in np.sort(np.unique(clusters)):
         if c == -1: # exclude unclustered (phenograph unclusted labeled w/-1)
             continue
-        my_diffex = up[up.cluster == c].sort_values(
-                by=['fdr', 'log2_effect'], ascending=[True,False])
+        my_diffex = up[up.cluster.str.split('.').str[-1].astype(int) == c
+                ].sort_values(by=['fdr', 'log2_effect'], ascending=[True,False])
         # filter gene names
         gene_name_mask = ~my_diffex.gene.str.contains('-')
         # only look at significant genes
         fdr_mask = my_diffex.fdr <= fdr_cutoff
         my_diffex = my_diffex[gene_name_mask & fdr_mask]
-        top_genes.append(my_diffex.head(ntop).ens.tolist())
 
-    # sort cells with mergesort (a stable sort)
-    cell_order = np.argsort(clusters[clusers>=0], kind='mergesort')
-    gene_ix_order = genes.set_index('ens').loc[top_genes]
+    # get cells with mergesort (a stable sort)
+    cell_order = np.argsort(clusters[clusters>=0], kind='mergesort')
+    gene_reindex = genes.set_index('ens')
+    print(gene_reindex.head())
+    gene_ix_order = gene_reindex.loc[top_genes]
     if not normed: # if not already normalized, normalized expression
         expression = np.log2(expression / expression.sum(axis=0) * 1e4 + 1)
 
