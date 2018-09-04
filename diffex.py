@@ -388,7 +388,9 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
         gene_name_mask = ~my_diffex.gene.str.contains('-')
         # only look at significant genes
         fdr_mask = my_diffex.fdr <= fdr_cutoff
-        my_diffex = my_diffex[gene_name_mask & fdr_mask]
+        # don't add genes already on list
+        unused_mask = ~my_diffex.ens.isin(top_genes)
+        my_diffex = my_diffex[gene_name_mask & fdr_mask & unused_mask]
         top_genes.extend(my_diffex.head(ntop).ens.tolist())
         top_gene_names.extend(my_diffex.head(ntop).gene.tolist())
 
