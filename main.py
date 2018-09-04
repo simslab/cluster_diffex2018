@@ -75,7 +75,7 @@ def _parseargs_post(args):
     if args.distance in binerized_metrics and args.dim_redux == 'pca':
         msg = '{} requires binerized data, and cannot be applied to {} '
         msg += 'transformed data.'
-        raise InvalidArgumentException(msg.format(args.distance))
+        raise ValueError(msg.format(args.distance))
 
     if args.distance in binerized_metrics and args.norm != 'none':
         msg = 'Distance metric {} will be run on a binerized matrix.'
@@ -140,7 +140,7 @@ if __name__=='__main__':
         redux = norm.iloc[marker_ix]
     elif args.dim_redux in ['none', 'pca']:
         print('{} not yet implemented'.format(args.dim_redux))
-        raise(InvalidArgumentException())
+        raise(ValueError())
 
     # get similarity/distance
     if args.distance == 'spearman':
@@ -178,12 +178,13 @@ if __name__=='__main__':
     # visualize
     umap = run_umap(distance, prefix='.'.join(running_prefix),
             outdir=args.outdir)
-    try:
-        dca = run_dca(distance, prefix='.'.join(running_prefix),
-                outdir=args.outdir)
-    except RuntimeError as e:
-        print('DCA error: {}'.format(e))
-        dca = None
+    if args.dmap:
+        try:
+            dca = run_dca(distance, prefix='.'.join(running_prefix),
+                    outdir=args.outdir)
+        except RuntimeError as e:
+            print('DCA error: {}'.format(e))
+            dca = None
 
     if args.tsne:
         print('tsne not yet implemented')
@@ -191,6 +192,8 @@ if __name__=='__main__':
     # cluster
     communities, graph, Q = run_phenograph(distance, k=args.k,
             prefix='.'.join(running_prefix), outdir=args.outdir)
+    nclusters = len(np.unique(communities[communities > -1]))
+    print('{} clusters identified by Phenograph'.format(nclusters))
     # visualize communities
     plot_clusters(communities, umap, outdir=args.outdir,
             prefix='.'.join(running_prefix + ['umap']))

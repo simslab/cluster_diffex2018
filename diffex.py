@@ -6,7 +6,7 @@ import pandas as pd
 from scipy.stats import binom
 from statsmodels.sandbox.stats.multicomp import multipletests
 
-from util import cluster_mask_generator
+from util import cluster_mask_generator, _import_plotlibs
 
 
 class PopulationStats:
@@ -375,9 +375,10 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
 
     """
     nclusters = len(np.unique(clusters))
+    expression = expression.set_index(genes.ens)
 
     # get top (significantly) differentially specific genes per cluster
-    top_genes = []
+    top_genes, top_gene_names = [], []
     for c in np.sort(np.unique(clusters)):
         if c == -1: # exclude unclustered (phenograph unclusted labeled w/-1)
             continue
@@ -388,31 +389,34 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
         # only look at significant genes
         fdr_mask = my_diffex.fdr <= fdr_cutoff
         my_diffex = my_diffex[gene_name_mask & fdr_mask]
+        top_genes.extend(my_diffex.head(ntop).ens.tolist())
+        top_gene_names.extend(my_diffex.head(ntop).gene.tolist())
+
 
     # get cells with mergesort (a stable sort)
     cell_order = np.argsort(clusters[clusters>=0], kind='mergesort')
-    gene_reindex = genes.set_index('ens')
-    print(gene_reindex.head())
-    gene_ix_order = gene_reindex.loc[top_genes]
     if not normed: # if not already normalized, normalized expression
         expression = np.log2(expression / expression.sum(axis=0) * 1e4 + 1)
 
-    diffex_matrix = expression[cell_order].loc[gene_ix_order]
+    diffex_matrix = expression.loc[top_genes][cell_order]
+    diffex_matrix.index = top_gene_names
 
     # setup colors
     colors = ['red','green','blue','magenta','brown','cyan','black','orange',
               'grey','darkgreen','yellow','tan','seagreen','fuchsia','gold',
               'olive']
-    if Nclusters > len(colors):
+    if nclusters > len(colors):
         colors = [name for name,hex in mpl.colors.cnames.items()]
         colors.reverse()
-    colors = colors[0:Nclusters]
+    colors = colors[0:nclusters]
 
     # plot heatmap of gene expression for top_N genes ordered by cluster assignment
-    clusterfile = '{}/{}.pg.diffex.pdf'
-    with PdfPages(hm_PDF) as pdf:
+    outfile = '{}/{}.pg.diffex.pdf'.format(outdir, label)
+    mpl, plt, _ = _import_plotlibs()
+    from matplotlib.backends.backend_pdf import PdfPages
+    with PdfPages(outfile) as pdf:
         fig,ax = plt.subplots()
-        L = float(len(gids))/100.*15.
+        L = float(diffex_matrix.shape[0])/100.*15.
         fig.set_size_inches(20,L)
         heatmap = ax.pcolor(diffex_matrix.values,cmap='BuGn')
         fig = plt.gcf()
@@ -424,17 +428,18 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
         ax.set_yticklabels(labels,minor=False)
         pdf.savefig()
         plt.close()
-        # fig,ax=plt.subplots()
-        # fig.set_size_inches(20,1)
-        # cMap = ListedColormap(colors)
+        fig,ax=plt.subplots()
+        fig.set_size_inches(20,1)
+        cMap = mpl.colors.ListedColormap(colors)
+        clusterids = clusters[cell_order]
         # clusterids = [0 for pt in range(clusters.count(0))]
 		# for i in range(1,Nclusters):
 			# clusterids.extend([i for pt in range(clusters.count(i))])
-		# heatmap = ax.pcolor([clusterids,clusterids],cmap=cMap)
-		# fig = plt.gcf()
-		# ax = plt.gca()
-		# pdf.savefig()
-		# plt.close()
+        heatmap = ax.pcolor([clusterids,clusterids],cmap=cMap)
+        fig = plt.gcf()
+        ax = plt.gca()
+        pdf.savefig()
+        plt.close()
 	# return 0
 
 
