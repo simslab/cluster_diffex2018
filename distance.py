@@ -1,74 +1,25 @@
 #!/usr/bin/python
 
-import numpy as np
-from scipy.stats.stats import spearmanr
-from scipy.spatial.distance import pdist, squareform
-
-from util import _import_plotlibs
-
 """
 Functions for marker gene selection and computing cell-cell distances or
 similarities
 """
 
-def get_spearman(matrix, outdir='', prefix='', verbose=False):
-    """ Computes the Spearman's correlation from an expression matrix
+import numpy as np
+from scipy.stats.stats import spearmanr
+from scipy.spatial.distance import pdist, squareform
 
-    Parameters
-    ----------
-    matrix : ndarray
-        matrix of elements compare similarity on.  Might be a counts matrix, a
-        counts matrix of selected genes, PC components, etc.
-    outdir: str, default ''
-    prefix: str, default ''
-    verbose: bool (default False)
+try:
+    from scipy.stats import energy_distance, wasserstein_distance
+except ImportError:
+    msg = 'Warning: could not import energy_distance or wasserstein_distance. '
+    msg+= 'To use energy or earthmover distance, upgrade scipy.'
+    print(msg)
 
-    Returns
-    -------
-    sp_matrix : matrix of cell-cell Spearman's correlation coefficients
-
-    """
-    if verbose:
-        print('Computing Spearman correlation matrix...')
-    sp_matrix = spearmanr(matrix)[0]
-    if outdir is not None and len(outdir)>0:
-        filename='{}/{}.corrSP.txt'.format(outdir, prefix.rstrip('.'))
-        # write Spearman correlation matrix to file
-        print('Writing correlation matrix...')
-        np.savetxt(filename, sp_matrix, delimiter='\t')
-    return sp_matrix
+from util import _import_plotlibs
 
 
-def get_pearson(matrix, outdir='', prefix='', verbose=False):
-    """ Computes the Pearson's correlation from an expression matrix
-
-    Parameters
-    ----------
-    matrix : ndarray
-        matrix of elements compare similarity on.  Might be a counts matrix, a
-        counts matrix of selected genes, PC components, etc.
-    outdir: str, default ''
-    prefix: str, default ''
-    verbose: bool (default False)
-
-    Returns
-    -------
-    sp_matrix : matrix of cell-cell Spearman's correlation coefficients
-
-    """
-    if verbose:
-        print('Computing Pearson correlation matrix...')
-    pr_matrix = np.corrcoef(matrix.T)
-    if outdir is not None and len(outdir)>0:
-        filename='{}/{}.corrPR.txt'.format(outdir, prefix.rstrip('.'))
-        # write  correlation matrix to file
-        print('Writing correlation matrix...')
-        np.savetxt(filename, pr_matrix, delimiter='\t')
-    return pr_matrix
-
-
-def get_distance(matrix, outdir, prefix, metric='euclidean',
-        alt_metric_label=''):
+def get_distance(matrix, outdir, prefix, metric='spearman'):
     """ get and write pairwise distance
 
     Parameters
@@ -89,14 +40,28 @@ def get_distance(matrix, outdir, prefix, metric='euclidean',
     -------
     d_matrix : cell by cell distance matrix
     """
-    print('Computing distance matrix...')
-    d_matrix = squareform(pdist(matrix.T, metric=metric))
+    print('Computing {} distance matrix...'.format(metric))
+
+    if metric=='spearman':
+        distance = 1 - spearmanr(matrix)[0]
+    elif metric == 'pearson':
+        distance = 1 - np.corrcoef(matrix.T)
+    elif metric in ['jaccard', 'hamming']:
+        binerized = np.where(matrix > 0, np.ones_like(matrix),
+                np.zeros_like(matrix))
+        distance = squareform(pdist(binerized.T, metric=metric))
+    elif metric == 'energy':
+        distance = squareform(pdist(matrix.T, metric=energy_distance))
+    elif metric in ['earthmover', 'wasserstein']:
+        distance = squareform(pdist(matrix.T, metric=wasserstein_distance))
+    else:
+        distance = squareform(pdist(matrix.T, metric=metric))
+
     # write Spearman correlation matrix to file
-    print('Writing distance matrix...')
-    metric_label = alt_metric_label if len(alt_metric_label) > 0 else metric
-    outfile = '{0}/{1}.{2}.txt'.format(outdir, prefix, metric_label)
-    np.savetxt(outfile, d_matrix, delimiter='\t')
-    return d_matrix
+    print('Writing distance matrix...'))
+    outfile = '{0}/{1}.txt'.format(outdir, prefix)
+    np.savetxt(outfile, distance, delimiter='\t')
+    return distance
 
 
 def select_markers(counts, window=25, nstd=6, t=0.15,
