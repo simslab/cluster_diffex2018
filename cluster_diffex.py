@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from scio import load_gene_by_cell_matrix
-from distance import select_markers, get_spearman, get_pearson, get_distance
+from distance import select_markers, get_distance
 from cluster import run_phenograph
 from visualize import run_umap, run_dca, plot_clusters
 from diffex import binomial_test_cluster_vs_rest, write_diffex_by_cluster, diffex_heatmap
@@ -21,8 +21,9 @@ def _parser():
     parser.add_argument('-r', '--dim-redux', default='marker',
             choices=['none', 'marker', 'pca'])
     parser.add_argument('-d', '--distance', default='spearman',
-            choices=['spearman', 'euclidean', 'pearson', 'cosine',
-                'jaccard', 'hamming', 'energy', 'earthmover'])
+            choices=['spearman', 'euclidean', 'pearson', 'cosine', 'jaccard',
+                     'hamming', 'energy', 'earthmover', 'braycurtis',
+                     'canberra'])
     parser.add_argument('-k', default=20, type=int,
             help='Number of nearest neighbors to use for clustering.')
 
@@ -36,7 +37,7 @@ def _parser():
             'given. Sets adaptive threshold for marker selection at `nstd` '
             'standard devations above the mean dropout score. The threshold '
             'used is min(adaptive_threshold, absolute_theshold).')
-    parser.add_argument('--absolute-threshold', default=0.15, type=float,
+    parser.add_argument('--absolute-threshold', default=0.2, type=float,
             help='Only used when `dim-redux`=`marker` and `marker_file` not '
             'given. Sets absolute threshold for marker selection. The threshold '
             'used is min(adaptive_threshold, absolute_theshold).')
@@ -152,9 +153,9 @@ if __name__=='__main__':
         raise(ValueError())
 
     # get similarity/distance
-    metric_label = _get_metric_label(args.distance)
+    metric_label = _get_distance_label(args.distance)
     running_prefix.append(metric_label)
-    distance = get_distance(redux, outdir=args.outdir,
+    distance = get_distance(redux, metric=args.distance, outdir=args.outdir,
                             prefix='.'.join(running_prefix))
 
     # visualize

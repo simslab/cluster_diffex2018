@@ -58,7 +58,7 @@ def get_distance(matrix, outdir, prefix, metric='spearman'):
         distance = squareform(pdist(matrix.T, metric=metric))
 
     # write Spearman correlation matrix to file
-    print('Writing distance matrix...'))
+    print('Writing distance matrix...')
     outfile = '{0}/{1}.txt'.format(outdir, prefix)
     np.savetxt(outfile, distance, delimiter='\t')
     return distance

@@ -7,6 +7,17 @@ import dmaps
 
 from util import _import_plotlibs
 
+def get_cluster_cmap(N, mpl):
+    if N < 11:
+        colors = mpl.cm.tab10.colors
+    elif N < 21 :
+        colors = mpl.cm.tab20.colors
+    else:
+        colors = [name for name,hex in mpl.colors.cnames.items()]
+        colors.reverse()
+    return colors[:N]
+
+
 def run_umap(distance, outdir, prefix):
     """ Compute and plot a 2D umap projection from a distance matrix.
 
@@ -110,13 +121,8 @@ def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):
 
     outfile = '{}/{}.pg.pdf'.format(outdir, prefix)
 
-    colors = ['red','green','blue','magenta','brown','cyan','black','orange',
-              'grey','darkgreen','yellow','tan','seagreen','fuchsia','gold',
-              'olive']
     N = len(set(clusters))
-    if N > len(colors):
-        colors = [name for name,hex in mpl.colors.cnames.items()]
-        colors.reverse()
+    colors = get_cluster_cmap(N, mpl)
 
     with PdfPages(outfile) as pdf:
         fig,ax = plt.subplots()

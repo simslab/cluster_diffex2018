@@ -7,6 +7,7 @@ from scipy.stats import binom
 from statsmodels.sandbox.stats.multicomp import multipletests
 
 from util import cluster_mask_generator, _import_plotlibs
+from visualize import get_cluster_cmap
 
 
 class PopulationStats:
@@ -403,18 +404,11 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
     diffex_matrix = expression.loc[top_genes][cell_order]
     diffex_matrix.index = top_gene_names
 
-    # setup colors
-    colors = ['red','green','blue','magenta','brown','cyan','black','orange',
-              'grey','darkgreen','yellow','tan','seagreen','fuchsia','gold',
-              'olive']
-    if nclusters > len(colors):
-        colors = [name for name,hex in mpl.colors.cnames.items()]
-        colors.reverse()
-    colors = colors[0:nclusters]
 
     # plot heatmap of gene expression for top_N genes ordered by cluster assignment
     outfile = '{}/{}.pg.diffex.pdf'.format(outdir, label)
     mpl, plt, _ = _import_plotlibs()
+    colors = get_cluster_cmap(nclusters, mpl)
     from matplotlib.backends.backend_pdf import PdfPages
     with PdfPages(outfile) as pdf:
         fig,ax = plt.subplots()
