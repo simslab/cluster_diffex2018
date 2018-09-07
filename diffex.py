@@ -240,7 +240,7 @@ def binomial_test(ingroup, outgroup, min_effectsize=2, FDR=0.01,
     df_up_final = df_up.loc[passing_up].sort_values(
         by=['fdr', 'log2_effect'], ascending=[True,False])
     df_down_final = df_down.loc[passing_down].sort_values(
-        by=['fdr', 'log2_effect'], ascending=[True,False])
+        by=['fdr', 'log2_effect'], ascending=[True,True])
 
     return df_up_final, df_down_final
 
@@ -376,13 +376,20 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
 
     """
     nclusters = len(np.unique(clusters))
+    # relable unclustered cells (assumed labeled with -1)
+    replace_neg1_with = -1
+    if -1 in np.unique(clusters):
+        replace_neg1_with = np.max(clusters) + 1
+        clusters = clusters.copy()
+        clusters[clusters == -1] = replace_neg1_with
+
     expression = expression.set_index(genes.ens)
 
     # get top (significantly) differentially specific genes per cluster
     top_genes, top_gene_names = [], []
     for c in np.sort(np.unique(clusters)):
-        if c == -1: # exclude unclustered (phenograph unclusted labeled w/-1)
-            continue
+        if c == replace_neg1_with:
+            c = -1
         my_diffex = up[up.cluster.str.split('.').str[-1].astype(int) == c
                 ].sort_values(by=['fdr', 'log2_effect'], ascending=[True,False])
         # filter gene names
@@ -397,7 +404,7 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
 
 
     # get cells with mergesort (a stable sort)
-    cell_order = np.argsort(clusters[clusters>=0], kind='mergesort')
+    cell_order = np.argsort(clusters, kind='mergesort')
     if not normed: # if not already normalized, normalized expression
         expression = np.log2(expression / expression.sum(axis=0) * 1e4 + 1)
 
@@ -428,6 +435,7 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
         fig.set_size_inches(20,1)
         cMap = mpl.colors.ListedColormap(colors)
         clusterids = clusters[cell_order]
+
         # clusterids = [0 for pt in range(clusters.count(0))]
 		# for i in range(1,Nclusters):
 			# clusterids.extend([i for pt in range(clusters.count(i))])
