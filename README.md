@@ -66,7 +66,7 @@ To see more options, such as setting `k` for the k nearest neighbors graph, usin
 ```
 python scripts/cluster_diffex.py -h
 ```
-In particular, to use the old scoring scheme, add the flag `--unscaled-score'.
+In particular, to use the old scoring scheme, add the flag `--unscaled-score` (and set marker selection threshold with `--absolute-threshold 0.15` to replicate marker selection from eariler papers).
  
 ### Output files (standard analysis)
 - `OUTDIR/PREFIX.dropout_curve.pdf` The dropout curve with marker genes colored in green
