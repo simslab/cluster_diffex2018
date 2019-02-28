@@ -13,14 +13,14 @@ This pipline requires Python >= 3.6 and the packages:
 - statsmodels
 - matplotlib
 - seaborn
-- umap
-- phenograph == 1.5.2 (https://github.com/jacoblevine/PhenoGraph)
+- [umap-learn](https://github.com/lmcinnes/umap)
+- [phenograph](https://github.com/jacoblevine/PhenoGraph) == 1.5.2 
 
 Optional:
 - [dmaps](https://github.com/hsidky/dmaps) 
 
 
-The easiest way to setup a python environment for s with [anaconda](https://www.continuum.io/downloads).
+The easiest way to setup a python environment for cluster_diffex is with [anaconda](https://www.continuum.io/downloads).
 ```
 conda create -n cluster_diffex_p36 python=3.6 scipy=1.1 pandas statsmodels matplotlib seaborn
 
@@ -36,7 +36,7 @@ conda install -c conda-forge umap-learn
 pip install git+https://github.com/jacoblevine/phenograph.git
 ```
 
-#### Optional dependencies
+#### Installing optional dependencies
 Optionally, install dmaps. First make sure you have cmake.  On debian-based distributions do:
 ```
 sudo apt install cmake
