@@ -60,7 +60,7 @@ def run_phenograph(distance, k=20, outdir='', prefix=''):
     if outdir is not None and len(outdir)>0:
         fileprefix = '{}/{}'.format(outdir, prefix)
         clusterfile = fileprefix + '.pg.txt'
-        np.savetxt(clusterfile, communities)
+        np.savetxt(clusterfile, communities, fmt='%i')
 
         logfile = fileprefix + '.pg.info.txt'
         with open(logfile, 'w') as f:

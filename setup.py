@@ -12,21 +12,19 @@ requires = ['scipy >= 1.1',
             'umap-learn',
             ]
 
-tests_require = []
 extras_require = {'diffusion embeddings' : 'dmaps'}
 
 setup(
     name='clusterdiffex',
     version=__version__,
-    packages=find_packages(),
-    # scripts=['cli/cvd'],
+    # scripts=['scripts/cluster_diffex'],
     python_requires='>=3.6',
     install_requires=requires,
-    # tests_require=tests_require,
     extras_require=extras_require,
     author = 'Sims Lab',
     author_email = '',
     description='Representative code for clustering, binomial differential expression and visualization',
     license="MIT",
+    packages=find_packages(),
 )
 

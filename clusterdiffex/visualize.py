@@ -81,8 +81,8 @@ def run_umap(distance, outdir='', prefix=''):
         _, plt, _ = _import_plotlibs()
         from matplotlib.backends.backend_pdf import PdfPages
         clean_prefix = prefix.rstrip('.') + '.' if len(prefix) else ''
-        outfile_coords = '{}/{}.umap.txt'.format(outdir, clean_prefix)
-        outfile_pdf = '{}/{}.umap.pdf'.format(outdir, clean_prefix)
+        outfile_coords = '{}/{}umap.txt'.format(outdir, clean_prefix)
+        outfile_pdf = '{}/{}umap.pdf'.format(outdir, clean_prefix)
 
         # plot
         print('Save UMAP coordinates...')
@@ -120,9 +120,9 @@ def run_dca(distance, outdir, prefix):
 
     """
     # get diffusion commpontnets
+    print('called run_dca')
     try:
         import dmaps
-        print('Running DCA...')
         dmap = dmaps.DiffusionMap(distance)
         dmap.set_kernel_bandwidth(3)
         dmap.compute(3)
@@ -134,8 +134,8 @@ def run_dca(distance, outdir, prefix):
             _, plt, _ = _import_plotlibs()
             from matplotlib.backends.backend_pdf import PdfPages
             clean_prefix = prefix.rstrip('.') + '.' if len(prefix) else ''
-            outfile_coords = '{}/{}.dca.txt'.format(outdir, clean_prefix)
-            outfile_pdf = '{}/{}.dca.pdf'.format(outdir, clean_prefix)
+            outfile_coords = '{}/{}dca.txt'.format(outdir, clean_prefix)
+            outfile_pdf = '{}/{}dca.pdf'.format(outdir, clean_prefix)
 
             # plot
             print('Save Diffusion Map coordinates...')
@@ -153,9 +153,9 @@ def run_dca(distance, outdir, prefix):
                 plt.close()
         return embedding
     except ImportError:
-        print('Warning: could not compute or plot diffusion components because'
-                ' dmaps is not installed. Install from https://github.com/hsidky/'
-                'dmaps.')
+        print('\nWARNING: could not compute or plot diffusion components'
+                ' because dmaps is not installed. Install from https://'
+                'github.com/hsidky/ dmaps. \n\nContinuing without...')
 
 
 def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):

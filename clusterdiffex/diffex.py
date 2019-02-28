@@ -374,6 +374,27 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
     Generates gene expression heatmap of the top differentially specific
     genes for each cluster.
 
+    Parameters
+    ----------
+    expression : DataFrame
+        DataFrame of expression counts
+    genes : DataFrame
+        Two column DataFrame of gene names
+    up : DataFrame
+        The up DataFrame from binomial_test_cluster_vs_rest
+    ntop : int
+        The number of top genes to use to create the heatmap. If a gene was
+        also a top gene for a previous cluster, the next highest effect size
+        gene with a corrected p-value < fdr_cuttoff is used.
+    outdir : str
+        Output directy for pdf
+    label : str
+        Prefix to prepend to the filename
+    fdr_cutoff : float, optional (Default: 0.01)
+        Do not include genes in heatmap that are most differentially specific
+        with fdr_bh corrected p values >= this value, even if they are in the
+        top `ntop`.
+
     """
     nclusters = len(np.unique(clusters))
     # relable unclustered cells (assumed labeled with -1)
@@ -412,8 +433,9 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
     diffex_matrix.index = top_gene_names
 
 
-    # plot heatmap of gene expression for top_N genes ordered by cluster assignment
-    outfile = '{}/{}.pg.diffex.pdf'.format(outdir, label)
+    # plot heatmap of gene expression for top_N genes ordered by cluster
+    # assignment
+    outfile ='{}/{}pg.diffex.pdf'.format(outdir,label+'.' if len(label) else '')
     mpl, plt, _ = _import_plotlibs()
     colors = get_cluster_cmap(nclusters, mpl)
     from matplotlib.backends.backend_pdf import PdfPages
@@ -446,87 +468,3 @@ def diffex_heatmap(expression, genes, clusters, up, ntop, outdir, label,
         plt.close()
 	# return 0
 
-
-
-
-    # # get cell number for each cluster assignment
-    # cluster_indices = [np.where(np.isin(clusters, [c]))[0] for c in range(nclusters)]
-
-    # cluster_dict = {}
-    # gids = []
-    # genes = []
-    # for i in range(Nclusters):
-            # gid_list = []
-            # gene_list = []
-		# path = working+'/'+run+'.'+str(i)+'.*.up.tsv'
-		# for diffex_INFILE in glob.glob(path):
-			# j = 0
-			# with open(diffex_INFILE) as f: # get top_N most specific genes for each cluster
-				# for line in f:
-					# if j > 0:
-						# llist = line.split()
-						# if j < top_N+1:
-							# gene = llist[2]
-							# if '-' not in gene:
-								# gid_list.append(llist[1])
-								# gene_list.append(llist[2])
-						# else:
-							# break
-					# j+=1
-		# for i in range(len(gid_list)):
-			# gid = gid_list[i]
-			# gene = gene_list[i]
-			# if gid not in cluster_dict.keys():
-				# cluster_dict[gid] = gene # dictionary related gene id and gene symbol
-				# gids.append(gid)
-
-	# gidset = set(gids)
-	# matrix = []
-	# spec_matrix = [[] for gid in gids]
-	# with open(matrix_INFILE) as f: # open the matrix of molecular counts
-		# for line in f:
-			# llist = line.split()
-			# vector = [int(ct) for ct in llist[2::]]
-			# gid = llist[0]
-			# if gid in gids: # set aside a special matrix with just the top_N differentially expressed genes for each cluster
-				# spec_matrix[gids.index(gid)] = vector
-			# matrix.append(vector)
-
-	# matrix = np.array(matrix)
-	# norm = sum(matrix)
-	# spec_matrix = np.log2(np.array(spec_matrix)*1.0e4/norm+1.0) # normalize the special matrix and log-transform to log2(CPTT)
-	# cluster_matrix = np.concatenate(tuple([spec_matrix[:,cluster_indices[i]] for i in range(Nclusters)]),axis=1) # assemble an expression matrix (CPM) ordered by cluster for the top_N genes
-
-	# colors = ['red','green','blue','magenta','brown','cyan','black','orange','grey','darkgreen','yellow','tan','seagreen','fuchsia','gold','olive']
-	# if Nclusters > len(colors):
-		# colors = [name for name,hex in mpl.colors.cnames.items()]
-		# colors.reverse()
-	# colors = colors[0:Nclusters]
-
-	# # plot heatmap of gene expression for top_N genes ordered by cluster assignment
-	# with PdfPages(hm_PDF) as pdf:
-		# fig,ax = plt.subplots()
-		# L = float(len(gids))/100.*15.
-		# fig.set_size_inches(20,L)
-		# heatmap = ax.pcolor(cluster_matrix,cmap='BuGn')
-		# fig = plt.gcf()
-		# ax = plt.gca()
-		# ax.set_yticks(np.arange(cluster_matrix.shape[0])+0.5,minor=False)
-		# ax.invert_yaxis()
-		# ax.tick_params(axis='both', which='major', labelsize=9)
-		# labels = [cluster_dict[gid] for gid in gids]
-		# ax.set_yticklabels(labels,minor=False)
-		# pdf.savefig()
-		# plt.close()
-		# fig,ax=plt.subplots()
-		# fig.set_size_inches(20,1)
-		# cMap = ListedColormap(colors)
-		# clusterids = [0 for pt in range(clusters.count(0))]
-		# for i in range(1,Nclusters):
-			# clusterids.extend([i for pt in range(clusters.count(i))])
-		# heatmap = ax.pcolor([clusterids,clusterids],cmap=cMap)
-		# fig = plt.gcf()
-		# ax = plt.gca()
-		# pdf.savefig()
-		# plt.close()
-	# return 0

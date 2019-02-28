@@ -71,7 +71,7 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
 
     Procedure used in Levitin et al. 2019 and Szabo, Levitin et al.  2019.
     For selection method used in Yuan et al. 2018 and Mizrak et al. 2019, see
-    `select_markers_fixed_bin`
+    `select_markers_static_bins`
 
     Parameters
     ----------
@@ -100,6 +100,9 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
     -------
     ix_passing : ndarray
         indices of selected genes
+
+
+    TODO: refactor w/ select_markers_static_bins_unscaled to avoid repeated code
     """
     print("Found {} genes (with a nonzero count) in {} cells...".format(
         counts.shape[0], counts.shape[1]))
@@ -163,7 +166,7 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
     return ix_passing
 
 
-def select_markers_fixed_bin(counts, t=0.2, outdir='', prefix='',
+def select_markers_static_bins_unscaled(counts, t=0.2, outdir='', prefix='',
         gene_names=None):
     """Select markers with fixed bins and no scaling
 
@@ -192,7 +195,58 @@ def select_markers_fixed_bin(counts, t=0.2, outdir='', prefix='',
     -------
     ix_passing : ndarray
         indices of selected genes
+
+    TODO: refactor w/ select_markers to avoid repeated code
     """
+    print("Found {} genes (with a nonzero count) in {} cells...".format(
+        counts.shape[0], counts.shape[1]))
+    print("Calculating dropout scores...")
+    dropout, means, scores = _dropout_scores_static_bins_unscaled(counts)
+    ix_passing = np.where(scores > t)[0]
+
+    n_markers = len(ix_passing)
+    print('Found {} markers from dropout analysis'.format(n_markers))
+
+    # write things to file
+    if outdir is not None and len(outdir) > 0:
+        # record parameters and adaptive threshold
+        my_prefix = prefix.rstrip('.') + '.' if len(prefix) else ''
+        print('Writing threshold info...')
+        thresholdfile = '{}/{}dropout_threshold.txt'.format(outdir, my_prefix)
+        with open(thresholdfile, 'w') as f:
+            msg = 't: {}\n'.format(t)
+            f.write(msg)
+
+        # save marker indexes
+        print('Saving marker gene indexes...')
+        ixfile = '{}/{}marker_ix.txt'.format(outdir, my_prefix)
+        np.savetxt(ixfile, ix_passing, fmt='%i')
+
+        # save marker gene names if gene_names given
+        if gene_names is not None:
+            print('Saving marker gene names...')
+            markerfile = '{}/{}markers.txt'.format(outdir, my_prefix)
+            passing_names = gene_names.iloc[ix_passing]
+            passing_names.to_csv(markerfile, sep='\t', header=None, index=None)
+
+        # plot the dropout curve
+        print('Plotting dropout curve')
+        # annoying import trickery to avoid exceptions due to matplotlib's
+        # backend in different contexts
+        mpl, plt, sns = _import_plotlibs()
+        from matplotlib.backends.backend_pdf import PdfPages
+        pdffile = '{}/{}dropout_curve.pdf'.format(outdir, my_prefix)
+        with PdfPages(pdffile) as pdf:
+            plt.plot(means,dropout,'ko',
+                     means[ix_passing], dropout[ix_passing],'go',
+                     markersize=4)
+            plt.ylim([-0.05,1.05])
+            plt.xlabel('log10(Mean Normalized Counts)')
+            plt.ylabel('Fraction of Cells')
+            pdf.savefig()
+            plt.close()
+
+    return ix_passing
     pass
 
 
@@ -240,6 +294,53 @@ def _dropout_scores(counts, window=25):
     # get score
     score = (rolling_max - sorted_dropout) / np.sqrt(rolling_max)
     # reorder scores to match original matrix ordering
+    score_reorder = score[np.argsort(gene_order)]
+
+    return dropout, means, score_reorder
+
+
+def _dropout_scores_static_bins_unscaled(counts, bin_size=50):
+    """Score genes based on their deviation from the dropout curve (older
+    method).
+
+    Genes are ordered by mean normalized expression, and sorted into bins of
+    `bin_size` genes. A gene's expected observation rate is estimated as the
+    maximum observation rate in its bin. The gene's score is its deviation
+    from its expected rate: expected_rate - observed_rate
+
+    Parameters
+    ----------
+    counts : ndarray
+        gene x cell count matrix
+    bin_size : int, optional (Default: 50)
+        size of window centered at each gene
+
+    Returns
+    -------
+    dropout : counts.shape[0] x 1 ndarray
+        fraction of cells in which gene is observed
+    means : counts.shape[0] x 1 ndarray
+        log10( normalized  mean expression), where each cell's
+        expression is normalized to sum to 1
+    scores : counts.shape[0] x 1 ndarray
+        unscaled dropout scores estimated from static bins
+    """
+    # normalize and sort by  means
+    normed = counts/np.sum(counts, axis=0)
+    means = np.log10(np.mean(normed, axis=1))
+    gene_order = np.argsort(means)
+    sorted_means = means[gene_order]
+
+    dropout = np.count_nonzero(counts, axis=1) / counts.shape[1]
+    sorted_dropout = dropout[gene_order]
+
+    nbins = int(np.ceil(len(means)/bin_size))
+    binmax = np.zeros_like(means)
+    for i in range(nbins):
+        start = i*bin_size
+        end = min((i+1)*bin_size, len(means))
+        binmax[start:end] = np.max(sorted_dropout[start:end])
+    score = binmax - sorted_dropout
     score_reorder = score[np.argsort(gene_order)]
 
     return dropout, means, score_reorder
