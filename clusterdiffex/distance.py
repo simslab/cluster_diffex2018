@@ -16,7 +16,7 @@ except ImportError:
     msg+= 'To use energy or earthmover distance, upgrade scipy.'
     print(msg)
 
-from util import _import_plotlibs
+from clusterdiffex.visualize import _import_plotlibs
 
 
 def get_distance(matrix, outdir, prefix, metric='spearman'):
@@ -38,7 +38,8 @@ def get_distance(matrix, outdir, prefix, metric='spearman'):
 
     Results
     -------
-    d_matrix : cell by cell distance matrix
+    d_matrix : ndarray
+        cell by cell distance matrix
     """
     print('Computing {} distance matrix...'.format(metric))
 
@@ -66,7 +67,12 @@ def get_distance(matrix, outdir, prefix, metric='spearman'):
 
 def select_markers(counts, window=25, nstd=6, t=0.15,
         outdir='', prefix='', gene_names=None):
-    """
+    """ Select marker with rolling window and scaling
+
+    Procedure used in Levitin et al. 2019 and Szabo, Levitin et al.  2019.
+    For selection method used in Yuan et al. 2018 and Mizrak et al. 2019, see
+    `select_markers_fixed_bin`
+
     Parameters
     ----------
     counts : ndarray
@@ -81,18 +87,22 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
         maximum threshold for designation as a dropout gene
     verbose : bool (default True)
         verbose output
-    outdir: str, default ''
-    prefix: str, default ''
-    genes : pandas dataframe, optional
-        ordered gene names and any other info.  must have integer indices.
-
+    outdir: str, optional (Default: '')
+        If given, directory to save markers and plots to
+    prefix: str, optional (Default: '')
+        If given, prefix for save filenames
+    gene_names : pandas dataframe, optional
+        ordered gene names and any other info. must have integer indices.  If
+        given, Used to write a file with marker gene names in addition to
+        indices.
 
     Returns
     -------
     ix_passing : ndarray
-        indices of passing genes
+        indices of selected genes
     """
-    print("Found {} genes in {} cells...".format(counts.shape[0], counts.shape[1]))
+    print("Found {} genes (with a nonzero count) in {} cells...".format(
+        counts.shape[0], counts.shape[1]))
     print("Calculating dropout scores...")
     dropout, means, scores = _dropout_scores(counts, window)
 
@@ -113,8 +123,9 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
     # write things to file
     if outdir is not None and len(outdir) > 0:
         # record parameters and adaptive threshold
+        my_prefix = prefix.rstrip('.') + '.' if len(prefix) else ''
         print('Writing threshold info...')
-        thresholdfile = '{}/{}.dropout_threshold.txt'.format(outdir, prefix)
+        thresholdfile = '{}/{}dropout_threshold.txt'.format(outdir, my_prefix)
         with open(thresholdfile, 'w') as f:
             msg = 'nstdev: {}\nadaptive:{}\nt: {}\n'.format(nstd,
                     adaptive_threshold, t)
@@ -122,13 +133,13 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
 
         # save marker indexes
         print('Saving marker gene indexes...')
-        ixfile = '{}/{}.marker_ix.txt'.format(outdir, prefix)
+        ixfile = '{}/{}marker_ix.txt'.format(outdir, my_prefix)
         np.savetxt(ixfile, ix_passing, fmt='%i')
 
         # save marker gene names if gene_names given
         if gene_names is not None:
             print('Saving marker gene names...')
-            markerfile = '{}/{}.markers.txt'.format(outdir, prefix)
+            markerfile = '{}/{}markers.txt'.format(outdir, my_prefix)
             passing_names = gene_names.iloc[ix_passing]
             passing_names.to_csv(markerfile, sep='\t', header=None, index=None)
 
@@ -138,7 +149,7 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
         # backend in different contexts
         mpl, plt, sns = _import_plotlibs()
         from matplotlib.backends.backend_pdf import PdfPages
-        pdffile = '{}/{}.dropout_curve.pdf'.format(outdir, prefix)
+        pdffile = '{}/{}dropout_curve.pdf'.format(outdir, my_prefix)
         with PdfPages(pdffile) as pdf:
             plt.plot(means,dropout,'ko',
                      means[ix_passing], dropout[ix_passing],'go',
@@ -150,6 +161,39 @@ def select_markers(counts, window=25, nstd=6, t=0.15,
             plt.close()
 
     return ix_passing
+
+
+def select_markers_fixed_bin(counts, t=0.2, outdir='', prefix='',
+        gene_names=None):
+    """Select markers with fixed bins and no scaling
+
+    Procedure used in Yuan et al. 2018 and Mizrak et al. 2019. For marker
+    selection algorithm used in Levitin et al. 2019 and Szabo, Levitin, et al.
+    2019, see `select_markers`
+
+    Parameters
+    ----------
+    counts : ndarray
+        gene x cell count matrix
+    t : float, optional (Default: 0.15)
+        maximum threshold for designation as a dropout gene
+    verbose : bool (default True)
+        verbose output
+    outdir: str, optional (Default: '')
+        If given, directory to save markers and plots to
+    prefix: str, optional (Default: '')
+        If given, prefix for save filenames
+    gene_names : pandas dataframe, optional
+        ordered gene names and any other info. must have integer indices.  If
+        given, Used to write a file with marker gene names in addition to
+        indices.
+
+    Returns
+    -------
+    ix_passing : ndarray
+        indices of selected genes
+    """
+    pass
 
 
 def _dropout_scores(counts, window=25):
@@ -202,6 +246,7 @@ def _dropout_scores(counts, window=25):
 
 
 def _rolling_window(a, window):
+    """Internal method"""
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)

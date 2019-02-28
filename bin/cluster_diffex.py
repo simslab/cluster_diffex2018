@@ -4,26 +4,38 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from scio import load_gene_by_cell_matrix
-from distance import select_markers, get_distance
-from cluster import run_phenograph
-from visualize import run_umap, run_dca, plot_clusters
-from diffex import binomial_test_cluster_vs_rest, write_diffex_by_cluster, diffex_heatmap
+from clusterdiffex.util import load_txt
+from clusterdiffex.distance import select_markers, get_distance
+from clusterdiffex.cluster import run_phenograph
+from clusterdiffex.visualize import run_umap, run_dca, plot_clusters
+from clusterdiffex.diffex import binomial_test_cluster_vs_rest, \
+    write_diffex_by_cluster, diffex_heatmap
 
 
 def _parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--count-matrix', required=True)
-    parser.add_argument('-o', '--outdir', required=True)
-    parser.add_argument('-p', '--prefix', default='')
+    parser.add_argument('-c', '--count-matrix', required=True,
+            help='Input data. Should be a whitespace-delimited gene by'
+            ' cell UMI count matrix with two leading columns of gene'
+            ' attributes: ENSEMBL_ID and GENE_NAME. The file may not have'
+            ' a header.')
+    parser.add_argument('-o', '--outdir', required=True,
+            help='The output directory.')
+    parser.add_argument('-p', '--prefix', default='',
+            help='A prefix to prepend to output filename (outfiles have the'
+            ' form {OUTDIR}/{PREFIX}.markers.txt for example).')
     parser.add_argument('-n', '--norm', default='none',
-            choices=['none', 'cp10k', 'log2cp10k'])
+            choices=['none', 'cp10k', 'log2cp10k'],
+            help='Normalization to use.')
     parser.add_argument('-r', '--dim-redux', default='marker',
-            choices=['none', 'marker', 'pca'])
+            choices=['none', 'marker', 'pca'],
+            help='Dimensionality reduction to use as input to distance'
+            ' calculation.  Currently only `marker` implemented.')
     parser.add_argument('-d', '--distance', default='spearman',
             choices=['spearman', 'euclidean', 'pearson', 'cosine', 'jaccard',
                      'hamming', 'energy', 'earthmover', 'braycurtis',
-                     'canberra'])
+                     'canberra'],
+            help='The distance metric to use.')
     parser.add_argument('-k', default=20, type=int,
             help='Number of nearest neighbors to use for clustering.')
 
@@ -37,7 +49,7 @@ def _parser():
             'given. Sets adaptive threshold for marker selection at `nstd` '
             'standard devations above the mean dropout score. The threshold '
             'used is min(adaptive_threshold, absolute_theshold).')
-    parser.add_argument('--absolute-threshold', default=0.2, type=float,
+    parser.add_argument('--absolute-threshold', default=0.15, type=float,
             help='Only used when `dim-redux`=`marker` and `marker_file` not '
             'given. Sets absolute threshold for marker selection. The threshold '
             'used is min(adaptive_threshold, absolute_theshold).')
@@ -47,8 +59,8 @@ def _parser():
             'fraction of cells expressing given the mean expression.')
 
     # visualization
-    parser.add_argument('--tsne', action='store_true', default=False)
-    parser.add_argument('--no-tsne', dest='tsne', action='store_false')
+    # parser.add_argument('--tsne', action='store_true', default=False)
+    # parser.add_argument('--no-tsne', dest='tsne', action='store_false')
 
     parser.add_argument('--dmap', dest='dmap', action='store_true', default=True)
     parser.add_argument('--no-dmap', dest='dmap', action='store_false')
@@ -105,11 +117,14 @@ if __name__=='__main__':
 
     # load the count matrix
     print('Loading UMI count matrix')
-    counts, genes = load_gene_by_cell_matrix(args.count_matrix)
+    counts, genes = load_txt(args.count_matrix)
+    counts = pd.DataFrame(counts.T.A)
+    genes.columns = ['ens', 'gene']
     nonzero = counts.sum(axis=1) > 0
     counts = counts.loc[nonzero]
     genes = genes.loc[nonzero]
 
+    # start the running prefix
     running_prefix = [args.prefix]
 
     # normalize if needed
@@ -152,7 +167,7 @@ if __name__=='__main__':
         print('{} not yet implemented'.format(args.dim_redux))
         raise(ValueError())
 
-    # get similarity/distance
+    # get distance
     metric_label = _get_distance_label(args.distance)
     running_prefix.append(metric_label)
     distance = get_distance(redux, metric=args.distance, outdir=args.outdir,
@@ -169,8 +184,8 @@ if __name__=='__main__':
             print('DCA error: {}'.format(e))
             dca = None
 
-    if args.tsne:
-        print('tsne not yet implemented')
+    # if args.tsne:
+        # print('tsne not yet implemented')
 
     # cluster
     communities, graph, Q = run_phenograph(distance, k=args.k,
@@ -192,7 +207,3 @@ if __name__=='__main__':
     write_diffex_by_cluster(up, down, args.outdir, cluster_info)
     diffex_heatmap(counts, genes, communities, up, 10, args.outdir,
             '.'.join(running_prefix))
-
-"""
-‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
-"""

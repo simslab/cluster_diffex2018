@@ -6,8 +6,8 @@ import pandas as pd
 from scipy.stats import binom
 from statsmodels.sandbox.stats.multicomp import multipletests
 
-from util import cluster_mask_generator, _import_plotlibs
-from visualize import get_cluster_cmap
+from clusterdiffex.cluster import cluster_mask_generator
+from clusterdiffex.visualize import _import_plotlibs, get_cluster_cmap
 
 
 class PopulationStats:
