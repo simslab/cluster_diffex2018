@@ -102,7 +102,7 @@ def run_umap(distance, outdir='', prefix=''):
     return embedding
 
 
-def run_dca(distance, outdir, prefix):
+def run_dca(distance, outdir='', prefix=''):
     """ Compute and plot 2D diffusion embedding from a distance matrix.
 
     Parameters
@@ -159,7 +159,7 @@ def run_dca(distance, outdir, prefix):
                 'github.com/hsidky/ dmaps. \n\nContinuing without...')
 
 
-def run_tsne(distance, outdir, prefix):
+def run_tsne(distance, outdir='', prefix=''):
     """ Compute and plot 2D tSNE from a distance matrix.
 
     Parameters
@@ -178,7 +178,8 @@ def run_tsne(distance, outdir, prefix):
 
     """
     print('Running tSNE...')
-    tsne = TSNE(n_components=2, perplexity=20, learning_rate=1000, verbose=2, metric="precomputed", method="exact")
+    tsne = TSNE(n_components=2, perplexity=20, learning_rate=1000,
+            verbose=2, metric="precomputed", method="exact")
     embedding = tsne.fit_transform(distance)
 
     if outdir is not None and len(outdir):

@@ -28,10 +28,6 @@ def _parser():
     parser.add_argument('-n', '--norm', default='none',
             choices=['none', 'cp10k', 'log2cp10k'],
             help='Normalization to use.')
-    # parser.add_argument('-r', '--dim-redux', default='marker',
-            # choices=['none', 'marker', 'pca'],
-            # help='Dimensionality reduction to use as input to distance'
-            # ' calculation.  Currently only `marker` implemented.')
     parser.add_argument('-d', '--distance', default='spearman',
             choices=['spearman', 'euclidean', 'pearson', 'cosine', 'jaccard',
                      'hamming', 'energy', 'earthmover', 'braycurtis',
