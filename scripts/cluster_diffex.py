@@ -8,7 +8,7 @@ from clusterdiffex.util import load_txt
 from clusterdiffex.distance import select_markers, get_distance, \
     select_markers_static_bins_unscaled
 from clusterdiffex.cluster import run_phenograph
-from clusterdiffex.visualize import run_umap, run_dca, plot_clusters
+from clusterdiffex.visualize import run_umap, run_dca, run_tsne, plot_clusters
 from clusterdiffex.diffex import binomial_test_cluster_vs_rest, \
     write_diffex_by_cluster, diffex_heatmap
 
@@ -65,8 +65,8 @@ def _parser():
             ' rather than the default scaled score with fixed bin.')
 
     # visualization
-    # parser.add_argument('--tsne', action='store_true', default=False)
-    # parser.add_argument('--no-tsne', dest='tsne', action='store_false')
+    parser.add_argument('--tsne', action='store_true', default=False)
+    parser.add_argument('--no-tsne', dest='tsne', action='store_false')
 
     parser.add_argument('--dmap', dest='dmap', action='store_true',
             default=False, help='Compute and and plot diffusion map.')
@@ -176,6 +176,12 @@ if __name__=='__main__':
     distance = get_distance(redux, metric=args.distance, outdir=args.outdir,
                             prefix='.'.join(running_prefix))
 
+    # cluster
+    communities, graph, Q = run_phenograph(distance, k=args.k,
+            prefix='.'.join(running_prefix), outdir=args.outdir)
+    nclusters = len(np.unique(communities[communities > -1]))
+    print('{} clusters identified by Phenograph'.format(nclusters))
+
     # visualize
     umap = run_umap(distance, prefix='.'.join(running_prefix),
             outdir=args.outdir)
@@ -187,22 +193,21 @@ if __name__=='__main__':
             print('DCA error: {}'.format(e))
             dca = None
 
-    # if args.tsne:
-        # print('tsne not yet implemented')
+    if args.tsne:
+        tsne = run_tsne(distance, prefix='.'.join(running_prefix),
+                outdir=args.outdir)
 
-    # cluster
-    communities, graph, Q = run_phenograph(distance, k=args.k,
-            prefix='.'.join(running_prefix), outdir=args.outdir)
-    nclusters = len(np.unique(communities[communities > -1]))
-    print('{} clusters identified by Phenograph'.format(nclusters))
     # visualize communities
     plot_clusters(communities, umap, outdir=args.outdir,
             prefix='.'.join(running_prefix + ['umap']))
     if args.dmap and dca is not None:
-        print(args.dmap)
         plot_clusters(communities, dca, outdir=args.outdir,
                 prefix='.'.join(running_prefix + ['dca']),
                 label_name='Diffusion Component')
+    if args.tsne and tsne is not None:
+        plot_clusters(communities, tsne, outdir=args.outdir,
+                prefix='.'.join(running_prefix + ['tsne']),
+                label_name='tSNE')
 
     # differential expression
     up, down, cluster_info = binomial_test_cluster_vs_rest(counts, genes,

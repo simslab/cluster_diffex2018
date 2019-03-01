@@ -3,6 +3,7 @@
 import warnings
 import numpy as np
 from umap import UMAP
+from sklearn.manifold import TSNE
 
 
 def _import_plotlibs(for_save=True):
@@ -120,7 +121,7 @@ def run_dca(distance, outdir, prefix):
 
     """
     # get diffusion commpontnets
-    print('called run_dca')
+    print('Running Diffusion Maps...')
     try:
         import dmaps
         dmap = dmaps.DiffusionMap(distance)
@@ -156,6 +157,52 @@ def run_dca(distance, outdir, prefix):
         print('\nWARNING: could not compute or plot diffusion components'
                 ' because dmaps is not installed. Install from https://'
                 'github.com/hsidky/ dmaps. \n\nContinuing without...')
+
+
+def run_tsne(distance, outdir, prefix):
+    """ Compute and plot 2D tSNE from a distance matrix.
+
+    Parameters
+    ----------
+    distance : ndarray
+        cell x cell distance matrix
+    outdir : str
+        output directory
+    prefix : str
+        prefix for file
+
+    Returns
+    -------
+    embedding : ndarray
+        cell x 2 array of first two diffusion components
+
+    """
+    print('Running tSNE...')
+    tsne = TSNE(n_components=2, perplexity=20, learning_rate=1000, verbose=2, metric="precomputed", method="exact")
+    embedding = tsne.fit_transform(distance)
+
+    if outdir is not None and len(outdir):
+        _, plt, _ = _import_plotlibs()
+        from matplotlib.backends.backend_pdf import PdfPages
+        clean_prefix = prefix.rstrip('.') + '.' if len(prefix) else ''
+        outfile_coords = '{}/{}tsne.txt'.format(outdir, clean_prefix)
+        outfile_pdf = '{}/{}tsne.pdf'.format(outdir, clean_prefix)
+
+        # plot
+        print('Save tSNE coordinates...')
+        np.savetxt(outfile_coords, embedding, delimiter='\t')
+
+        print('Plot tSNE output...')
+
+        with PdfPages(outfile_pdf) as pdf:
+            plt.plot(embedding[:,0],embedding[:,1],'ko',markersize=4)
+            plt.xlabel('Diffusion Component 1')
+            plt.ylabel('Diffusion Component 2')
+            ax = plt.gca()
+            ax.set_aspect('equal')
+            pdf.savefig()
+            plt.close()
+    return embedding
 
 
 def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):

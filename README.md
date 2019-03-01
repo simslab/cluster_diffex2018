@@ -10,6 +10,7 @@ This pipline requires Python >= 3.6 and the packages:
 - scipy >= 1.1
 - numpy
 - pandas
+- scikit-learn
 - statsmodels
 - matplotlib
 - seaborn
