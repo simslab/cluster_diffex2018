@@ -46,7 +46,9 @@ XOR on OSX with homebrew do:
 ```
 brew install cmake
 ```
-XOR something else for a different OS/package manager.  Then:
+XOR something else for a different OS/package manager.  
+
+Then, install dmaps:
 ```
 pip install git+https://github.com/hsidky/dmaps.git
 ```
@@ -54,7 +56,8 @@ pip install git+https://github.com/hsidky/dmaps.git
 Once you have set up the environment, clone this repository and install.
 ```
 git clone git@github.com:simslab/cluster_diffex2018.git
-pip install ./cluster_diffex2018
+cd cluster_diffex2018
+pip install .
 ```
 ## Running the pipeline
 A typical run of the pipeline might look like:
