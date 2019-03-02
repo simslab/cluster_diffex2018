@@ -74,7 +74,7 @@ In particular, to use the old scoring scheme, add the flag `--unscaled-score` (a
 
 - `OUTDIR/PREFIX.dropout_threshold.txt` A record of the absolute threshold ('t') and the adaptive threshold. The minimum is used as the cutoff for marker selection.
 
-- `OUTDIR/PREFIX.marker_ix.txt` Indices of the marker gene rows used in the original count matrix.
+- `OUTDIR/PREFIX.marker_ix.txt` Indices of the marker gene rows used in the origninal count matrix *after* all rows with only zeros have been removed.
 
 - `OUTDIR/PREFIX.markers.txt` ENSEMBL\_ID and GENE\_NAME for selected genes.
 
