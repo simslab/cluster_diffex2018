@@ -37,7 +37,7 @@ def _parser():
             help='Number of nearest neighbors to use for clustering.')
 
     # marker selection/loading parameters
-    parser.add_argument('--absolute-threshold', default=0.2, type=float,
+    parser.add_argument('--absolute-threshold', default=0.15, type=float,
             help= 'Sets absolute threshold for marker selection. In the'
             ' default case with scaled dropout scores, the final threshold'
             ' used is min(adaptive_threshold, absolute_theshold). Only'
