@@ -23,7 +23,7 @@ Optional:
 
 The easiest way to setup a python environment for cluster_diffex is with [anaconda](https://www.continuum.io/downloads).
 ```
-conda create -n cluster_diffex_p36 python=3.6 scipy=1.1 pandas statsmodels matplotlib seaborn
+conda create -n cluster_diffex_p36 python=3.6 scikit-learn statsmodels seaborn
 
 # older anaconda
 source activate cluster_diffex_p36
