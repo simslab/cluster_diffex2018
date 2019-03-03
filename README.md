@@ -96,14 +96,3 @@ In particular, to use the old scoring scheme, add the flag `--unscaled-score`.
 - `OUTDIR/PREFIX.markers.dcorrSP.CLUSTER_ID.nCells_N.nRest_M.down.tsv` For a cluster CLUSTER\_ID with N cells in the cluster, and M cells in the rest of the dataset, a table of gene ids, names, count in cluster, count out of cluster, fdr_bh corrected pvalues and effect sizes by a binomial test for binary downregulation. Ordered by negative effect size.
 
 - `OUTDIR/PREFIX.markers.dcorrSP.pg.diffex.pdf` Heatmap of normalized expression for the the top differentially expressed genes (by a binomial test) in each cluster.
-
-## Optional: install as a command line utility
-In `setup.py`, uncomment the line:
-```
-# scripts=['scripts/cluster_diffex']
-```
-Then reinstall the package. While in the base directory:
-```
-pip install .
-```
-All commands run with the 'python cluster_diffex.py' can then just be run with 'cluster_diffex' instead.
