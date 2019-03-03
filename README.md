@@ -66,7 +66,7 @@ python scripts/cluster_diffex.py --count-matrix UMI_MATRIX.txt -o OUTDIR  -p PRE
 ```
 where UMI_MATRIX.txt is a whitespace delimited gene by cell UMI count matrix with two leading columns of gene attributes: `ENSEMBL_ID  GENE_NAME  UMICOUNT_CELL0  UMICOUNT_CELL1 ... `.
 
-To see more options, such as setting `k` for the k nearest neighbors graph, using a list of markers in a file, setting thresholds for marker gene selection, using the older scoring scheme, etc.:
+To see more options, such as setting `k` for the k nearest neighbors graph, using a preselected list of markers in a file, setting thresholds for marker gene selection, using the older scoring scheme, visualization with tSNE or dmaps, etc.:
 ```
 python scripts/cluster_diffex.py -h
 ```
