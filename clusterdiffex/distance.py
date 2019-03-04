@@ -19,7 +19,7 @@ except ImportError:
 from clusterdiffex.visualize import _import_plotlibs
 
 
-def get_distance(matrix, outdir, prefix, metric='spearman'):
+def get_distance(matrix, outdir='', prefix='', metric='spearman'):
     """ get and write pairwise distance
 
     Parameters
@@ -59,9 +59,10 @@ def get_distance(matrix, outdir, prefix, metric='spearman'):
         distance = squareform(pdist(matrix.T, metric=metric))
 
     # write Spearman correlation matrix to file
-    print('Writing distance matrix...')
-    outfile = '{0}/{1}.txt'.format(outdir, prefix)
-    np.savetxt(outfile, distance, delimiter='\t')
+    if outdir is not None and len(outdir):
+        print('Writing distance matrix...')
+        outfile = '{0}/{1}.txt'.format(outdir, prefix)
+        np.savetxt(outfile, distance, delimiter='\t')
     return distance
 
 

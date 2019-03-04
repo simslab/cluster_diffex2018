@@ -36,6 +36,10 @@ def _parser():
     parser.add_argument('-k', default=20, type=int,
             help='Number of nearest neighbors to use for clustering.')
 
+    parser.add_argument('--save-distance', action='store_true', default=False,
+            help='Save the distance matrix (we don\'t do this by default'
+            ' because the file is big but easy to recalculate).')
+
     # marker selection/loading parameters
     parser.add_argument('--absolute-threshold', default=0.15, type=float,
             help= 'Sets absolute threshold for marker selection. In the'
@@ -169,8 +173,9 @@ if __name__=='__main__':
     # get distance
     metric_label = _get_distance_label(args.distance)
     running_prefix.append(metric_label)
-    distance = get_distance(redux, metric=args.distance, outdir=args.outdir,
-                            prefix='.'.join(running_prefix))
+    distance = get_distance(redux, metric=args.distance,
+            outdir=args.outdir if args.save_distance else '',
+            prefix='.'.join(running_prefix))
 
     # cluster
     communities, graph, Q = run_phenograph(distance, k=args.k,
