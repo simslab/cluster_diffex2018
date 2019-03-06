@@ -212,7 +212,10 @@ if __name__=='__main__':
 
     # differential expression
     up, down, cluster_info = binomial_test_cluster_vs_rest(counts, genes,
-            communities, '.'.join(running_prefix), for_gsea=True, verbose=True)
-    write_diffex_by_cluster(up, down, args.outdir, cluster_info)
-    diffex_heatmap(counts, genes, communities, up, 10, args.outdir,
+            communities, '.'.join(running_prefix), for_gsea=True,
+            verbose=True)
+    diffex_outdir = '{}/{}.diffex_binom/'.format(args.outdir,
+            '.'.join(running_prefix))
+    write_diffex_by_cluster(up, down, diffex_outdir, cluster_info)
+    diffex_heatmap(counts, genes, communities, up, 10, diffex_outdir,
             '.'.join(running_prefix))
