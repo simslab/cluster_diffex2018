@@ -93,6 +93,6 @@ In particular, to use the old scoring scheme, add the flag `--unscaled-score`.
 
 - `OUTDIR/PREFIX.markers.dcorrSP.CLUSTER_ID.nCells_N.nRest_M.up.tsv` For a cluster CLUSTER\_ID with N cells in the cluster, and M cells in the rest of the dataset, a table of gene ids, names, count in cluster, count out of cluster, fdr_bh corrected pvalues and effect sizes by a binomial test for binary upregulation. Ordered by effect size (decreasing).
 
-- `OUTDIR/PREFIX.markers.dcorrSP.CLUSTER_ID.nCells_N.nRest_M.down.tsv` For a cluster CLUSTER\_ID with N cells in the cluster, and M cells in the rest of the dataset, a table of gene ids, names, count in cluster, count out of cluster, fdr_bh corrected pvalues and effect sizes by a binomial test for binary downregulation. Ordered by negative effect size.
+- `OUTDIR/PREFIX.markers.dcorrSP.diffex_binom/PREFIX.markers.dcorrSP.CLUSTER_ID.nCells_N.nRest_M.down.tsv` For a cluster CLUSTER\_ID with N cells in the cluster, and M cells in the rest of the dataset, a table of gene ids, names, count in cluster, count out of cluster, fdr_bh corrected pvalues and effect sizes by a binomial test for binary downregulation. Ordered by negative effect size.
 
-- `OUTDIR/PREFIX.markers.dcorrSP.pg.diffex.pdf` Heatmap of normalized expression for the the top differentially expressed genes (by a binomial test) in each cluster.
+- `OUTDIR/PREFIX.markers.dcorrSP.diffex_binom/PREFIX.markers.dcorrSP.pg.diffex.pdf` Heatmap of normalized expression for the the top differentially expressed genes (by a binomial test) in each cluster.
