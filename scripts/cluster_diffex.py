@@ -19,7 +19,7 @@ def _parser():
             help='Input data. Should be a whitespace-delimited gene by'
             ' cell UMI count matrix with two leading columns of gene'
             ' attributes: ENSEMBL_ID and GENE_NAME. The file may not have'
-            ' a header.')
+            ' a header. Can also be a loom file.')
     parser.add_argument('-o', '--outdir', required=True,
             help='The output directory.')
     parser.add_argument('-p', '--prefix', default='',
@@ -120,7 +120,10 @@ if __name__=='__main__':
 
     # load the count matrix
     print('Loading UMI count matrix')
-    counts, genes = load_txt(args.count_matrix)
+    if infile.endswith('.loom'):
+        counts, genes = load_loom(args.count_matrix)
+    else:
+        counts, genes = load_txt(args.count_matrix)
     counts = pd.DataFrame(counts.T.A)
     genes.columns = ['ens', 'gene']
     nonzero = counts.sum(axis=1) > 0
