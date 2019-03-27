@@ -38,7 +38,12 @@ pip install git+https://github.com/jacoblevine/phenograph.git
 ```
 
 #### Installing optional dependencies
-Optionally, install dmaps. First make sure you have cmake.  On debian-based distributions do:
+1. Optionally, install loompy
+```
+pip install -U loompy
+```
+
+2. Optionally, install dmaps. First make sure you have cmake.  On debian-based distributions do:
 ```
 sudo apt install cmake
 ```

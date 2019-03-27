@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from clusterdiffex.util import load_txt
+from clusterdiffex.util import load_txt, load_loom
 from clusterdiffex.distance import select_markers, get_distance, \
     select_markers_static_bins_unscaled
 from clusterdiffex.cluster import run_phenograph
@@ -120,7 +120,7 @@ if __name__=='__main__':
 
     # load the count matrix
     print('Loading UMI count matrix')
-    if infile.endswith('.loom'):
+    if args.count_matrix.endswith('.loom'):
         counts, genes = load_loom(args.count_matrix)
     else:
         counts, genes = load_txt(args.count_matrix)
