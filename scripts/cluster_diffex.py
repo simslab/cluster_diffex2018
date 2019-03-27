@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import pandas as pd
 
-from clusterdiffex.util import load_txt
+from clusterdiffex.util import load_txt, load_loom
 from clusterdiffex.distance import select_markers, get_distance, \
     select_markers_static_bins_unscaled
 from clusterdiffex.cluster import run_phenograph
@@ -19,7 +19,7 @@ def _parser():
             help='Input data. Should be a whitespace-delimited gene by'
             ' cell UMI count matrix with two leading columns of gene'
             ' attributes: ENSEMBL_ID and GENE_NAME. The file may not have'
-            ' a header.')
+            ' a header. Can also be a loom file.')
     parser.add_argument('-o', '--outdir', required=True,
             help='The output directory.')
     parser.add_argument('-p', '--prefix', default='',
@@ -120,7 +120,10 @@ if __name__=='__main__':
 
     # load the count matrix
     print('Loading UMI count matrix')
-    counts, genes = load_txt(args.count_matrix)
+    if args.count_matrix.endswith('.loom'):
+        counts, genes = load_loom(args.count_matrix)
+    else:
+        counts, genes = load_txt(args.count_matrix)
     counts = pd.DataFrame(counts.T.A)
     genes.columns = ['ens', 'gene']
     nonzero = counts.sum(axis=1) > 0
