@@ -120,8 +120,9 @@ if __name__=='__main__':
 
     # load the count matrix
     print('Loading UMI count matrix')
+    cellinfo = None
     if args.count_matrix.endswith('.loom'):
-        counts, genes = load_loom(args.count_matrix)
+        counts, genes, cellinfo = load_loom(args.count_matrix)
     else:
         counts, genes = load_txt(args.count_matrix)
     counts = pd.DataFrame(counts.T.A)
@@ -222,3 +223,10 @@ if __name__=='__main__':
     write_diffex_by_cluster(up, down, diffex_outdir, cluster_info)
     diffex_heatmap(counts, genes, communities, up, 10, diffex_outdir,
             '.'.join(running_prefix))
+
+    if cellinfo is not None:
+        print('Writing cell info from loom')
+        cellinfo_file = '{}/{}.cells.txt'.format(args.outdir,args.prefix)
+        cellinfo.to_csv(cellinfo_file, sep='\t', index=False)
+
+

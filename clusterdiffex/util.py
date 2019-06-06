@@ -119,11 +119,14 @@ def load_loom(filename):
         Dataframe of gene attributes.  Attributes are ordered so
         Accession and Gene are the first columns, if those attributs are
         present
+    cells : Dataframe
+        Dataframe of cell attributes
     """
     import loompy
     # load the loom file
     with loompy.connect(filename) as ds:
         loom_genes = pd.DataFrame(dict(ds.ra.items()))
+        loom_cells = pd.DataFrame(dict(ds.ca.items()))
         loom_coo = ds.sparse().T
 
     # order gene attributes so Accession and Gene are the first two columns,
@@ -135,7 +138,7 @@ def load_loom(filename):
     rest_cols = loom_genes.columns.difference(first_cols).tolist()
     loom_genes = loom_genes[first_cols + rest_cols]
 
-    return loom_coo,loom_genes
+    return loom_coo,loom_genes,loom_cells
 
 
 def write_gene_by_cell_matrix(genes, matrix, outfile):
