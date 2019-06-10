@@ -140,7 +140,7 @@ if __name__=='__main__':
     running_prefix = [args.prefix]
 
     # save the arguments
-    arg_file = '{}/{}.commandline_ags.txt'.format(args.outdir, args.prefix)
+    arg_file = '{}/{}.commandline_ags.json'.format(args.outdir, args.prefix)
     print('Writing args to {}'.format(arg_file))
     with open(arg_file, 'w') as f:
         json.dump(args.__dict__, f,  indent=2)
