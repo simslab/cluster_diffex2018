@@ -1,6 +1,7 @@
 import os
-import gc
 import argparse
+import json
+
 import numpy as np
 import pandas as pd
 
@@ -73,6 +74,10 @@ def _parser():
     parser.add_argument('--no-dmap', dest='dmap', action='store_false',
             help='Do not compute or plot diffusion map.')
 
+    # cluster params
+    parser.add_argument('-mcs', '--min-cluster-size', default=10, type=int,
+            help='Minimum cluster size for phenograph.')
+
     return parser
 
 
@@ -134,6 +139,12 @@ if __name__=='__main__':
     # start the running prefix
     running_prefix = [args.prefix]
 
+    # save the arguments
+    arg_file = '{}/{}.commandline_ags.txt'.format(args.outdir, args.prefix)
+    print('Writing args to {}'.format(arg_file))
+    with open(arg_file, 'w') as f:
+        json.dump(args.__dict__, f,  indent=2)
+
     # normalize if needed
     if args.norm in ['cp10k', 'log2cp10k']:
         norm = counts / counts.sum(axis=0) * 10000
@@ -183,7 +194,8 @@ if __name__=='__main__':
 
     # cluster
     communities, graph, Q = run_phenograph(distance, k=args.k,
-            prefix='.'.join(running_prefix), outdir=args.outdir)
+            prefix='.'.join(running_prefix), outdir=args.outdir,
+            min_cluster_size=args.min_cluster_size)
     nclusters = len(np.unique(communities[communities > -1]))
     print('{} clusters identified by Phenograph'.format(nclusters))
 
@@ -228,5 +240,6 @@ if __name__=='__main__':
         print('Writing cell info from loom')
         cellinfo_file = '{}/{}.cells.txt'.format(args.outdir,args.prefix)
         cellinfo.to_csv(cellinfo_file, sep='\t', index=False)
+
 
 
