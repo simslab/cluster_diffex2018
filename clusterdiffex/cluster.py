@@ -33,7 +33,7 @@ def get_knn(distance, k=20):
     return coo_matrix((np.hstack(values), indices),shape=distance.shape)
 
 
-def run_phenograph(distance, k=20, outdir='', prefix=''):
+def run_phenograph(distance, k=20, outdir='', prefix='', **kwargs):
     """
     Runs Phenograph on an expression- or PCA-based distance matrix.
 
@@ -55,7 +55,7 @@ def run_phenograph(distance, k=20, outdir='', prefix=''):
 
     """
     knn = get_knn(distance, k)
-    communities, graph, Q = phenograph.cluster(knn)
+    communities, graph, Q = phenograph.cluster(knn, **kwargs)
 
     if outdir is not None and len(outdir)>0:
         fileprefix = '{}/{}'.format(outdir, prefix)
