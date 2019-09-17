@@ -47,7 +47,11 @@ def get_cluster_cmap(N, mpl):
     elif N < 21 :
         colors = mpl.cm.tab20.colors
     else:
-        colors = [name for name,hex in mpl.colors.cnames.items()]
+        colors = [name for name,hex in mpl.colors.cnames.items() \
+                  if not ('white' in name # nothing we can't see
+                          or 'grey' in name  # get rid grey/gray dupes
+                          or name in ['snow', 'seashell'] # hard to see
+                          )]
         colors.reverse()
     return colors[:N]
 
