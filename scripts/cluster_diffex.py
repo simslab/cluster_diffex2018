@@ -188,9 +188,9 @@ if __name__=='__main__':
     if np.any(marker_per_cell == 0):
         ncells_nomark = np.sum(marker_per_cell == 0)
         msg = '{} of {} cells'.format(ncells_nomark, redux.shape[1])
-        msg += ' do not express any  of the {}'.format(len(marker_ix))
+        msg += ' do not express any of the {}'.format(len(marker_ix))
         msg += ' marker genes. Either remove these cells or alter thresholds'
-        msg += ' to increase the number of molecules.'
+        msg += ' to increase the number of markers.'
         raise ValueError(msg)
 
     # get distance
