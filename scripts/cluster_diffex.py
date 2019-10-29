@@ -184,6 +184,14 @@ if __name__=='__main__':
                 t=args.absolute_threshold)
     running_prefix.append('markers')
     redux = norm.iloc[marker_ix]
+    marker_per_cell = redux.astype(bool).sum()
+    if np.any(marker_per_cell == 0):
+        ncells_nomark = np.sum(marker_per_cell == 0)
+        msg = '{} out of {} cells'.format(ncells, redux.shape[1])
+        msg += ' do not express any  of the {}'.format(len(marker_ix))
+        msg += ' marker genes. Either remove these cells or alter thresholds'
+        msg += ' to increase the number of molecules, ()'
+        raise ValueError(msg)
 
     # get distance
     metric_label = _get_distance_label(args.distance)
