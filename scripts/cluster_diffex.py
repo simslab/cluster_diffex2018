@@ -1,6 +1,7 @@
-import os
 import argparse
 import json
+import os
+import time
 
 import numpy as np
 import pandas as pd
@@ -123,6 +124,8 @@ if __name__=='__main__':
     args = parser.parse_args()
     args = _parseargs_post(args)
 
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+
     # load the count matrix
     print('Loading UMI count matrix')
     cellinfo = None
@@ -140,7 +143,8 @@ if __name__=='__main__':
     running_prefix = [args.prefix]
 
     # save the arguments
-    arg_file = '{}/{}.commandline_ags.json'.format(args.outdir, args.prefix)
+    arg_file = '{}/{}.commandline_args.json'.format(args.outdir, args.prefix)
+    args.starttime = timestr
     print('Writing args to {}'.format(arg_file))
     with open(arg_file, 'w') as f:
         json.dump(args.__dict__, f,  indent=2)
@@ -232,6 +236,9 @@ if __name__=='__main__':
             verbose=True)
     diffex_outdir = '{}/{}.diffex_binom/'.format(args.outdir,
             '.'.join(running_prefix))
+    if os.path.exists(diffex_outdir):
+        diffex_outdir.replace('_binom', '_binom-' + timestr)
+
     write_diffex_by_cluster(up, down, diffex_outdir, cluster_info)
     diffex_heatmap(counts, genes, communities, up, 10, diffex_outdir,
             '.'.join(running_prefix))
