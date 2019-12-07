@@ -75,8 +75,8 @@ class PopulationStats:
         index : pandas index or series
         """
         assert(index.sort_values().equals(self.n_cells_exp.index.sort_values()))
-        self.n_cells_exp = self.n_cells_exp.ix[index]
-        self.n_mol = self.n_mol.ix[index]
+        self.n_cells_exp = self.n_cells_exp.loc[index]
+        self.n_mol = self.n_mol.loc[index]
         if self.med_mol is not None:
             self.med_mol = self.med_mol.loc[index]
 
@@ -319,13 +319,13 @@ def binomial_test_cluster_vs_rest(expression, genes, clusters,
                 min_effectsize=min_effectsize, FDR=FDR,
                 min_proportion=min_proportion)
         up_c['cluster'] = cluster.id
-        up_c['gene'] = genes.ix[up_c.index].gene
-        up_c['ens'] = genes.ix[up_c.index].ens
+        up_c['gene'] = genes.loc[up_c.index].gene
+        up_c['ens'] = genes.loc[up_c.index].ens
         up.append(up_c)
 
         down_c['cluster'] = cluster.id
-        down_c['gene'] = genes.ix[down_c.index].gene
-        down_c['ens'] = genes.ix[down_c.index].ens
+        down_c['gene'] = genes.loc[down_c.index].gene
+        down_c['ens'] = genes.loc[down_c.index].ens
         down.append(down_c)
 
         if garbage_collect:
