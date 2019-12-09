@@ -143,7 +143,7 @@ if __name__=='__main__':
     running_prefix = [args.prefix]
 
     # save the arguments
-    arg_file = '{}/{}.commandline_args.json'.format(args.outdir, args.prefix)
+    arg_file = '{}/{}.cluster_diffex_args.json'.format(args.outdir, args.prefix)
     args.starttime = timestr
     print('Writing args to {}'.format(arg_file))
     with open(arg_file, 'w') as f:
