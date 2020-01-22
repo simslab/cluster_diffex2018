@@ -131,6 +131,7 @@ if __name__=='__main__':
     cellinfo = None
     if args.count_matrix.endswith('.loom'):
         counts, genes, cellinfo = load_loom(args.count_matrix)
+        genes = genes[['Accession', 'Gene']]
     else:
         counts, genes = load_txt(args.count_matrix)
     counts = pd.DataFrame(counts.T.A)
@@ -204,8 +205,8 @@ if __name__=='__main__':
     print('{} clusters identified by Phenograph'.format(nclusters))
 
     # visualize
-    umap = run_umap(distance, prefix='.'.join(running_prefix),
-            outdir=args.outdir)
+    umap = run_umap(np.nan_to_num(distance).astype(np.float32),
+            prefix='.'.join(running_prefix), outdir=args.outdir)
     if args.dmap:
         try:
             dca = run_dca(distance, prefix='.'.join(running_prefix),
