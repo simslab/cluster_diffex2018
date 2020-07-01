@@ -65,6 +65,8 @@ def _parser():
     parser.add_argument('--unscaled-score', action='store_true', default=False,
             help='Use an unscaled score with fixed bins for marker selection'
             ' rather than the default scaled score with fixed bin.')
+    parser.add_argument('--markers-only', action='store_true', default=False,
+            help='Only do marker things then stop')
 
     # visualization
     parser.add_argument('--tsne', action='store_true', default=False)
@@ -119,7 +121,7 @@ def _get_distance_label(metric):
         return metric
 
 
-if __name__=='__main__':
+def main():
     parser = _parser()
     args = parser.parse_args()
     args = _parseargs_post(args)
@@ -177,18 +179,24 @@ if __name__=='__main__':
         msg += 'in count matrix.'
         print(msg.format(len(markers.ens.unique()), args.marker_file,
                             len(marker_ix)))
+        running_prefix.append('fmarkers')
     elif args.unscaled_score:
         marker_ix = select_markers_static_bins_unscaled(counts.values,
                 outdir=args.outdir, prefix=args.prefix, gene_names=genes,
                 t=args.absolute_threshold)
+        running_prefix.append('markers')
     else:
         # pick our own markers using the dropout curve
         marker_ix = select_markers(counts.values, outdir=args.outdir,
                 prefix=args.prefix, gene_names=genes,
                 window=args.window_size, nstd=args.nstd,
                 t=args.absolute_threshold)
-    running_prefix.append('markers')
+        running_prefix.append('markers')
     redux = norm.iloc[marker_ix]
+
+    if args.markers_only:
+        print('Exiting because received flag --markers-only')
+        return
 
     # get distance
     metric_label = _get_distance_label(args.distance)
@@ -250,4 +258,5 @@ if __name__=='__main__':
         cellinfo.to_csv(cellinfo_file, sep='\t', index=False)
 
 
-
+if __name__=='__main__':
+    main()
