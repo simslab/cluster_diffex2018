@@ -1,7 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
+import os
 import numpy as np
 from scipy.sparse import coo_matrix
+from scipy.io import mmread, mmwrite
+from clusterdiffex.distance import spearmanr
+import umap
 
 import phenograph
 
@@ -33,7 +37,75 @@ def get_knn(distance, k=20):
     return coo_matrix((np.hstack(values), indices),shape=distance.shape)
 
 
-def run_phenograph(distance, k=20, outdir='', prefix='', **kwargs):
+def get_approx_knn(X, k=20, metric=spearmanr, metric_kw={}, angular=True,
+        random_state=0):
+    """
+    Parameters
+    -----------
+    X: ndarray
+        cell x gene
+    k: int
+
+    """
+    from sklearn.utils import check_random_state
+    cols, vals, _ = umap.umap_.nearest_neighbors(X, k, metric, metric_kw,
+            angular, check_random_state(random_state))
+    cols_flat = np.hstack(cols)
+    vals_flat = np.hstack(vals)
+    rows = np.ravel(np.column_stack( [np.arange(cols.shape[0])]*k ))
+    assert len(cols_flat) == len(vals_flat)
+    assert len(cols_flat) == len(rows)
+    return coo_matrix((vals_flat, (rows, cols_flat)), shape=(X.shape[0],
+        X.shape[0]))
+
+
+def run_phenograph_approx_knn(X, k=20, outdir='', prefix='', **kwargs):
+    """
+    Runs Phenograph on an expression- or PCA-based distance matrix.
+
+    Parameters
+    ----------
+    X: ndarray
+        cell x feature data matrix
+    k: int (default 20)
+        number of nearest neighbors to use
+    outdir: str (default '')
+    prefix: str (default '')
+    label: str (default '')
+
+    Returns
+    -------
+    communities
+    graph
+    Q : float
+
+    """
+    assert X.shape[0] > X.shape[1]
+    fileprefix = '{}/{}'.format(outdir, prefix)
+    knn_file = f'{fileprefix}.knn{k}_approx.mtx'
+    if os.path.exists(knn_file):
+        knn = mmread(knn_file)
+    else:
+        knn = get_approx_knn(X, k) #.tolil()
+        mmwrite(knn_file, knn)
+
+    print(83, knn.shape)
+    communities, graph, Q = phenograph.cluster(knn, **kwargs)
+
+    if outdir is not None and len(outdir)>0:
+        fileprefix = '{}/{}'.format(outdir, prefix)
+        clusterfile = fileprefix + '.pg.txt'
+        np.savetxt(clusterfile, communities, fmt='%i')
+
+        logfile = fileprefix + '.pg.info.txt'
+        with open(logfile, 'w') as f:
+            f.write('k:{}\nQ:{}'.format(k, Q))
+
+    return communities, graph, Q
+
+
+def run_phenograph(distance, k=20, outdir='', prefix='', approx_knn=False,
+        **kwargs):
     """
     Runs Phenograph on an expression- or PCA-based distance matrix.
 
@@ -54,7 +126,7 @@ def run_phenograph(distance, k=20, outdir='', prefix='', **kwargs):
     Q : float
 
     """
-    knn = get_knn(distance, k)
+    knn = get_knn(distance, k).tolil()
     communities, graph, Q = phenograph.cluster(knn, **kwargs)
 
     if outdir is not None and len(outdir)>0:
