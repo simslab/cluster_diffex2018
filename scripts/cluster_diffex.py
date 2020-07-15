@@ -1,3 +1,5 @@
+#/usr/bin/env python
+
 import argparse
 import json
 import os
@@ -9,10 +11,11 @@ import pandas as pd
 from clusterdiffex.util import load_txt, load_loom
 from clusterdiffex.distance import select_markers, get_distance, \
     select_markers_static_bins_unscaled
-from clusterdiffex.cluster import run_phenograph
+from clusterdiffex.cluster import run_phenograph, run_phenograph_approx_knn
 from clusterdiffex.visualize import run_umap, run_dca, run_tsne, plot_clusters
 from clusterdiffex.diffex import binomial_test_cluster_vs_rest, \
     write_diffex_by_cluster, diffex_heatmap
+from clusterdiffex import distance as dist
 
 
 def _parser():
@@ -80,6 +83,8 @@ def _parser():
     # cluster params
     parser.add_argument('-mcs', '--min-cluster-size', default=10, type=int,
             help='Minimum cluster size for phenograph.')
+
+    parser.add_argument('-aknn', '--approx-knn', action='store_true')
 
     return parser
 
@@ -201,31 +206,50 @@ def main():
     # get distance
     metric_label = _get_distance_label(args.distance)
     running_prefix.append(metric_label)
-    distance = get_distance(redux, metric=args.distance,
-            outdir=args.outdir if args.save_distance else '',
-            prefix='.'.join(running_prefix))
 
     # cluster
-    communities, graph, Q = run_phenograph(distance, k=args.k,
-            prefix='.'.join(running_prefix), outdir=args.outdir,
-            min_cluster_size=args.min_cluster_size)
+    if args.approx_knn:
+        if args.distance != 'spearman':
+            raise RuntimeError('approx-knn only implemented for spearman')
+        communities, graph, Q = run_phenograph_approx_knn(redux.T.values,
+                k=args.k, prefix='.'.join(running_prefix), outdir=args.outdir,
+                min_cluster_size=args.min_cluster_size)
+
+    else:
+        distance = get_distance(redux, metric=args.distance,
+                outdir=args.outdir if args.save_distance else '',
+                prefix='.'.join(running_prefix))
+        communities, graph, Q = run_phenograph(distance, k=args.k,
+                prefix='.'.join(running_prefix), outdir=args.outdir,
+                min_cluster_size=args.min_cluster_size)
+
     nclusters = len(np.unique(communities[communities > -1]))
     print('{} clusters identified by Phenograph'.format(nclusters))
 
     # visualize
-    umap = run_umap(np.nan_to_num(distance).astype(np.float32),
-            prefix='.'.join(running_prefix), outdir=args.outdir)
-    if args.dmap:
-        try:
-            dca = run_dca(distance, prefix='.'.join(running_prefix),
-                    outdir=args.outdir)
-        except RuntimeError as e:
-            print('DCA error: {}'.format(e))
-            dca = None
+    if args.approx_knn:
+        umap = run_umap(redux.T,
+                prefix='.'.join(running_prefix), outdir=args.outdir,
+                metric=dist.spearmanr)
+        if args.dmap:
+            raise RuntimeError('dmap not implemented for approx-knn')
+        if args.tsne:
+            raise RuntimeError('tsne not implemented for approx-knn')
 
-    if args.tsne:
-        tsne = run_tsne(distance, prefix='.'.join(running_prefix),
-                outdir=args.outdir)
+    else:
+        umap = run_umap(np.nan_to_num(distance).astype(np.float32),
+                prefix='.'.join(running_prefix), outdir=args.outdir)
+        if args.dmap:
+            try:
+                dca = run_dca(distance, prefix='.'.join(running_prefix),
+                        outdir=args.outdir)
+            except RuntimeError as e:
+                print('DCA error: {}'.format(e))
+                dca = None
+
+        if args.tsne:
+            tsne = run_tsne(distance, prefix='.'.join(running_prefix),
+                    outdir=args.outdir)
 
     # visualize communities
     plot_clusters(communities, umap, outdir=args.outdir,
