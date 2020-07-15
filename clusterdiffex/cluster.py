@@ -22,6 +22,8 @@ def get_knn(distance, k=20):
         values are the distance between the cell for the row and its k nearest
         neighbors
     """
+    if k > distance.shape[0]:
+        raise ValueError(f'k {k} < number of cells {distance.shape[0]}')
     topk = np.argsort(distance)[:, 1:k+1]
     values, row, col, kstart = [], [], [], -(k+1)
     for cell in np.arange(topk.shape[0]):
