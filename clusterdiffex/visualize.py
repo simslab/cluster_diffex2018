@@ -52,13 +52,13 @@ def get_cluster_cmap(N, mpl):
     return colors[:N]
 
 
-def run_umap(distance, outdir='', prefix=''):
+def run_umap(data, outdir='', prefix='', metric='precomputed'):
     """ Compute and plot a 2D umap projection from a distance matrix.
 
     Parameters
     ----------
-    distance : ndarray
-        cell x cell distance matrix
+    data : ndarray
+        cell x cell distance matrix or cell x feature matrix
     outdir : str, optional (Default: '')
         output directory for saving coordinates and plot
     prefix : str, optional (Default: '')
@@ -75,8 +75,8 @@ def run_umap(distance, outdir='', prefix=''):
     print('Running umap...')
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        umap_model = UMAP(metric='precomputed', )
-        embedding = umap_model.fit_transform(distance)
+        umap_model = UMAP(metric=metric)
+        embedding = umap_model.fit_transform(data)
 
     if outdir is not None and len(outdir):
         _, plt, _ = _import_plotlibs()
@@ -206,7 +206,8 @@ def run_tsne(distance, outdir='', prefix=''):
     return embedding
 
 
-def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):
+def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP',
+        outfile=None):
     """ Plot 2D embedding colored by cluster and save to file
 
     Note : currently only works for saving to file, not in notebooks
@@ -219,13 +220,21 @@ def plot_clusters(clusters, coordinates, outdir, prefix, label_name='UMAP'):
         (ncells, 2) array of coordinates
     outdir  : str
         the output directory
+    prefix : str
+        prefix for file
+    label_name: str, optional (Default: UMAP)
+        Label name for axes
+    outfile : str, optional (Default: None)
+        If not none, ignore outdir  and prefix and use  for output
+        instead
     """
     assert len(clusters) == len(coordinates)
     # get appropriate libraries in a context-specific manner
     mpl, plt, _ = _import_plotlibs()
     from matplotlib.backends.backend_pdf import PdfPages
 
-    outfile = '{}/{}.pg.pdf'.format(outdir, prefix)
+    if outfile is None:
+        outfile = '{}/{}.pg.pdf'.format(outdir, prefix)
 
     N = len(np.unique(clusters))
     colors = get_cluster_cmap(N, mpl)

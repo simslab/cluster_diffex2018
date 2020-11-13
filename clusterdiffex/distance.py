@@ -6,8 +6,9 @@ similarities
 """
 
 import numpy as np
-from scipy.stats.stats import spearmanr
+from scipy import stats
 from scipy.spatial.distance import pdist, squareform
+import numba
 
 try:
     from scipy.stats import energy_distance, wasserstein_distance
@@ -44,7 +45,7 @@ def get_distance(matrix, outdir='', prefix='', metric='spearman'):
     print('Computing {} distance matrix...'.format(metric))
 
     if metric=='spearman':
-        distance = 1 - spearmanr(matrix)[0]
+        distance = 1 - stats.spearmanr(matrix)[0]
     elif metric == 'pearson':
         distance = 1 - np.corrcoef(matrix.T)
     elif metric in ['jaccard', 'hamming']:
@@ -352,3 +353,54 @@ def _rolling_window(a, window):
     shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
     strides = a.strides + (a.strides[-1],)
     return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+
+
+# taken from pynndescent
+@numba.njit()
+def rankdata(a, method="average"):
+    arr = np.ravel(np.asarray(a))
+    if method == "ordinal":
+        sorter = arr.argsort(kind="mergesort")
+    else:
+        sorter = arr.argsort(kind="quicksort")
+
+    inv = np.empty(sorter.size, dtype=np.intp)
+    inv[sorter] = np.arange(sorter.size)
+
+    if method == "ordinal":
+        return (inv + 1).astype(np.float64)
+
+    arr = arr[sorter]
+    obs = np.ones(arr.size, np.bool_)
+    obs[1:] = arr[1:] != arr[:-1]
+    dense = obs.cumsum()[inv]
+
+    if method == "dense":
+        return dense.astype(np.float64)
+
+    # cumulative counts of each unique value
+    nonzero = np.nonzero(obs)[0]
+    count = np.concatenate((nonzero, np.array([len(obs)], nonzero.dtype)))
+
+    if method == "max":
+        return count[dense].astype(np.float64)
+
+    if method == "min":
+        return (count[dense - 1] + 1).astype(np.float64)
+
+    # average method
+    return 0.5 * (count[dense] + count[dense - 1] + 1)
+
+
+# from pynndescent, except returns a distance
+@numba.njit(fastmath=True)
+def spearmanr(x, y):
+    a = np.column_stack((x, y))
+
+    n_vars = a.shape[1]
+
+    for i in range(n_vars):
+        a[:, i] = rankdata(a[:, i])
+    rs = np.corrcoef(a, rowvar=0)
+
+    return 1 - rs[1, 0]
